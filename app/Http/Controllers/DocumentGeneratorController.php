@@ -185,7 +185,12 @@ class DocumentGeneratorController extends Controller
 
     public function destroy(Document $document)
     {
+        if (Storage::disk('public')->exists($document->path)) {
+            Storage::disk('public')->delete($document->path);
+        }
+        // 2. Supprimer l'enregistrement en base de données
         $document->delete();
+
         return back();
     }
 }

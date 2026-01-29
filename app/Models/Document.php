@@ -30,4 +30,3 @@ class Document extends Model
         'config' => 'array',
     ];
 }
-

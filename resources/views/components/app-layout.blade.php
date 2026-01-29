@@ -38,10 +38,11 @@
         <nav class="max-w-5xl mx-auto py-4">
             <ul class=" flex items-center gap-2">
                 <li><a class="dark:text-white black:text-black text-xl" href="{{ route('documents.index') }}">Pdf Config manager</a></li>
+                <li><a class="dark:text-white black:text-black underline pl-8" href="{{ route('facture.index') }}">Factures</a></li>
             </ul>
         </nav>
     </header>
-    <main>
+    <main class="overflow-y-scroll">
         {{ $slot }}
     </main>
 

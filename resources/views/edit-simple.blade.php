@@ -120,8 +120,8 @@
         </script>
     @endpush
 
-    <div class="py-4">
-        <h1 class="text-center pb-2 text-xl font-bold">Configurer votre modèle {{ $document->name }}</h1>
+    <div class="py-4  overflow-y-scroll">
+        @livewire('templat-name', ['document' => $document])
         <div x-data="formEditor({
                 elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
                 documentId: {{ $document->id }},
@@ -135,7 +135,7 @@
                         Ajouter un Élément
                     </button>
                 </div>
-                <div class="flex-grow overflow-y-auto">
+                <div class="flex-grow">
                     <template x-for="element in elements" :key="element.id">
                         <div @click="selectElement(element.id)"
                             class="p-3 border-b cursor-pointer hover:bg-gray-50 flex justify-between items-center"

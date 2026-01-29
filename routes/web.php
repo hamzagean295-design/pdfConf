@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentGeneratorController;
+use App\Http\Controllers\FactureController;
 
 Route::get('/', function () {
     return to_route('documents.index');
@@ -19,3 +20,5 @@ Route::prefix('documents')->controller(DocumentGeneratorController::class)->grou
     Route::get('/{document}/edit-simple', 'editSimple')->name('documents.edit-simple');
     Route::patch('/{document}/config', 'saveConfig');
 });
+
+Route::resource('facture', FactureController::class);
