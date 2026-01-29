@@ -25,8 +25,7 @@ final class PdfGeneratorService
         private readonly StaticTextRenderer $staticTextRenderer,
         private readonly DynamicTagRenderer $dynamicTagRenderer,
         private readonly ImageRenderer $imageRenderer,
-    ) {
-    }
+    ) {}
 
     /**
      * Generates a PDF by adding elements to a source template.
@@ -61,15 +60,16 @@ final class PdfGeneratorService
             $pdf->useTemplate($templateId);
 
             // Render elements on the current page.
-            // Note: This simple version renders all elements on all pages.
-            // A more advanced implementation would add a "page" property to the JSON element config.
             foreach ($document->config['elements'] ?? [] as $element) {
-                match ($element['type']) {
-                    'text'  => $this->staticTextRenderer->render($pdf, $element, $dataObject),
-                    'tag'   => $this->dynamicTagRenderer->render($pdf, $element, $dataObject),
-                    'image' => $this->imageRenderer->render($pdf, $element, $dataObject),
-                    default => throw new InvalidArgumentException("Unknown element type: '{$element['type']}'"),
-                };
+                // Render element only if it belongs to the current page (default to page 1)
+                if ((int)($element['page'] ?? 1) === $pageNo) {
+                    match ($element['type']) {
+                        'text'  => $this->staticTextRenderer->render($pdf, $element, $dataObject),
+                        'tag'   => $this->dynamicTagRenderer->render($pdf, $element, $dataObject),
+                        'image' => $this->imageRenderer->render($pdf, $element, $dataObject),
+                        default => throw new InvalidArgumentException("Unknown element type: '{$element['type']}'"),
+                    };
+                }
             }
         }
 
