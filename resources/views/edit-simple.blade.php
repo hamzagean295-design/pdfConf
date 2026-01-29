@@ -120,115 +120,118 @@
         </script>
     @endpush
 
-    <div x-data="formEditor({
-            elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
-            documentId: {{ $document->id }},
-            totalPages: {{ $totalPages }}
-        })" x-cloak class="flex h-screen bg-gray-100">
+    <div class="py-4">
+        <h1 class="text-center pb-2 text-xl font-bold">Configurer votre modèle {{ $document->name }}</h1>
+        <div x-data="formEditor({
+                elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
+                documentId: {{ $document->id }},
+                totalPages: {{ $totalPages }}
+            })" x-cloak class="flex h-screen bg-gray-100">
 
-        <!-- Colonne de gauche : Liste des éléments -->
-        <aside class="w-1/4 h-full flex flex-col border-r bg-white">
-            <div class="p-4 border-b">
-                <button @click="addElement()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
-                    Ajouter un Élément
-                </button>
-            </div>
-            <div class="flex-grow overflow-y-auto">
-                <template x-for="element in elements" :key="element.id">
-                    <div @click="selectElement(element.id)"
-                        class="p-3 border-b cursor-pointer hover:bg-gray-50 flex justify-between items-center"
-                        :class="{ 'bg-blue-100 hover:bg-blue-100': selectedId === element.id }">
-                        <div>
-                            <!-- Affiche le label ou la valeur si pas de label -->
-                            <p class="font-semibold" x-text="element.label || element.value"></p>
-                            <p class="text-sm text-gray-600">
-                                Type: <span x-text="element.type"></span>,
-                                Page: <span x-text="element.page"></span>
-                            </p>
-                        </div>
-                        <button @click.stop="removeElement(element.id)" class="text-red-500 hover:text-red-700 text-xl">&times;</button>
-                    </div>
-                </template>
-            </div>
-        </aside>
-
-        <!-- Colonne du centre : Prévisualisation PDF -->
-        <main class="w-1/2 h-full flex flex-col bg-gray-200">
-            <embed src="{{ $pdfUrl }}" type="application/pdf" class="w-full h-full">
-        </main>
-
-        <!-- Colonne de droite : Éditeur de propriétés -->
-        <aside class="w-1/4 h-full flex flex-col border-l bg-white">
-            <div class="flex-grow p-4 overflow-y-auto">
-                <h2 class="text-lg font-bold mb-4">Propriétés</h2>
-                <div x-show="!selectedId" class="text-gray-500">
-                    Sélectionnez un élément à gauche pour l'éditer.
+            <!-- Colonne de gauche : Liste des éléments -->
+            <aside class="w-1/4 h-full flex flex-col border-r bg-white">
+                <div class="p-4 border-b">
+                    <button @click="addElement()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
+                        Ajouter un Élément
+                    </button>
                 </div>
-                <div x-show="selectedId" x-if="selectedElement()" class="space-y-4">
-                    <!-- Le champ Type est supprimé, il est déduit -->
-                    <div>
-                        <label class="block text-sm font-medium">Type Déduit</label>
-                        <input type="text" readonly :value="selectedElement().type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100">
+                <div class="flex-grow overflow-y-auto">
+                    <template x-for="element in elements" :key="element.id">
+                        <div @click="selectElement(element.id)"
+                            class="p-3 border-b cursor-pointer hover:bg-gray-50 flex justify-between items-center"
+                            :class="{ 'bg-blue-100 hover:bg-blue-100': selectedId === element.id }">
+                            <div>
+                                <!-- Affiche le label ou la valeur si pas de label -->
+                                <p class="font-semibold" x-text="element.label || element.value"></p>
+                                <p class="text-sm text-gray-600">
+                                    Type: <span x-text="element.type"></span>,
+                                    Page: <span x-text="element.page"></span>
+                                </p>
+                            </div>
+                            <button @click.stop="removeElement(element.id)" class="text-red-500 hover:text-red-700 text-xl">&times;</button>
+                        </div>
+                    </template>
+                </div>
+            </aside>
+
+            <!-- Colonne du centre : Prévisualisation PDF -->
+            <main class="w-1/2 h-full flex flex-col bg-gray-200">
+                <embed src="{{ $pdfUrl }}" type="application/pdf" class="w-full h-full">
+            </main>
+
+            <!-- Colonne de droite : Éditeur de propriétés -->
+            <aside class="w-1/4 h-full flex flex-col border-l bg-white">
+                <div class=" p-4 overflow-y-auto">
+                    <h2 class="text-lg font-bold mb-4">Propriétés</h2>
+                    <div x-show="!selectedId" class="text-gray-500">
+                        Sélectionnez un élément à gauche pour l'éditer.
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium">Page</label>
-                        <select x-model.number="selectedElement().page" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            <template x-for="i in totalPages" :key="i">
-                                <option :value="i" x-text="i"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Valeur / Tag / Path</label>
-                        <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div x-show="selectedId" x-if="selectedElement()" class="space-y-4">
+                        <!-- Le champ Type est supprimé, il est déduit -->
                         <div>
-                            <label class="block text-sm font-medium">X (mm)</label>
-                            <input type="number" step="0.1" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <label class="block text-sm font-medium">Type Déduit</label>
+                            <input type="text" readonly :value="selectedElement().type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium">Y (mm)</label>
-                            <input type="number" step="0.1" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <label class="block text-sm font-medium">Page</label>
+                            <select x-model.number="selectedElement().page" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <template x-for="i in totalPages" :key="i">
+                                    <option :value="i" x-text="i"></option>
+                                </template>
+                            </select>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Police</label>
-                        <input type="text" x-model.debounce.200ms="selectedElement().font_family" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Taille Police</label>
-                        <input type="number" x-model.number="selectedElement().font_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Poids Police</label>
-                        <select x-model="selectedElement().font_weight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            <option value="normal">Normal</option>
-                            <option value="bold">Gras</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Style Police</label>
-                        <select x-model="selectedElement().font_style" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            <option value="normal">Normal</option>
-                            <option value="italic">Italique</option>
-                            <option value="B">Gras (FPDI)</option>
-                            <option value="I">Italique (FPDI)</option>
-                            <option value="BI">Gras Italique (FPDI)</option>
-                        </select>
-                    </div>
-                     <div>
-                        <label class="block text-sm font-medium">Couleur</label>
-                        <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
+                        <div>
+                            <label class="block text-sm font-medium">Valeur / Tag / Path</label>
+                            <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium">X (mm)</label>
+                                <input type="number" step="0.1" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Y (mm)</label>
+                                <input type="number" step="0.1" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Police</label>
+                            <input type="text" x-model.debounce.200ms="selectedElement().font_family" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Taille Police</label>
+                            <input type="number" x-model.number="selectedElement().font_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Poids Police</label>
+                            <select x-model="selectedElement().font_weight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="normal">Normal</option>
+                                <option value="bold">Gras</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Style Police</label>
+                            <select x-model="selectedElement().font_style" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="normal">Normal</option>
+                                <option value="italic">Italique</option>
+                                <option value="B">Gras (FPDI)</option>
+                                <option value="I">Italique (FPDI)</option>
+                                <option value="BI">Gras Italique (FPDI)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Couleur</label>
+                            <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="p-4 border-t">
-                <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400">
-                    <span x-show="!isSaving">Sauvegarder la Configuration</span>
-                    <span x-show="isSaving">Sauvegarde...</span>
-                </button>
-            </div>
-        </aside>
+                <div class="p-4 border-t">
+                    <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400">
+                        <span x-show="!isSaving">Sauvegarder la Configuration</span>
+                        <span x-show="isSaving">Sauvegarde...</span>
+                    </button>
+                </div>
+            </aside>
+        </div>
     </div>
 </x-app-layout>

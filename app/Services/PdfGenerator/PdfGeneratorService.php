@@ -30,27 +30,21 @@ final class PdfGeneratorService
     /**
      * Generates a PDF by adding elements to a source template.
      *
-     * @param Document $document The document model containing the path to the source PDF and the configuration.
+     * @param string $pdfFileContent The raw content of the source PDF file.
+     * @param array<string, mixed> $elementsConfig The configuration for the elements to render.
      * @param object|array<string, mixed> $data The data object or array to populate dynamic tags.
      * @return string The raw content of the generated PDF file.
-     * @throws FileNotFoundException If the source PDF file does not exist in storage.
      * @throws InvalidArgumentException If an unknown element type is found in the configuration.
      */
-    public function generate(Document $document, object|array $data): string
+    public function generate(string $pdfFileContent, array $elementsConfig, object|array $data): string
     {
-        // Ensure the source PDF exists in the specified storage disk.
-        if (!Storage::disk('local')->exists($document->path)) {
-            throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
-        }
-
         // It's better to convert array to object for consistent `data_get` behavior.
         $dataObject = is_array($data) ? (object) $data : $data;
 
         $pdf = new Fpdi();
 
         // Load the source PDF from its raw content string.
-        $fileContent = Storage::disk('local')->get($document->path);
-        $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
+        $pageCount = $pdf->setSourceFile(StreamReader::createByString($pdfFileContent));
 
         // Process all pages of the source document.
         for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
@@ -60,7 +54,7 @@ final class PdfGeneratorService
             $pdf->useTemplate($templateId);
 
             // Render elements on the current page.
-            foreach ($document->config['elements'] ?? [] as $element) {
+            foreach ($elementsConfig as $element) {
                 // Render element only if it belongs to the current page (default to page 1)
                 if ((int)($element['page'] ?? 1) === $pageNo) {
                     match ($element['type']) {

@@ -34,7 +34,16 @@
 </head>
 <body class="antialiased bg-gray-100 h-screen overflow-hidden">
 
-    {{ $slot }}
+    <header class="bg-black">
+        <nav class="max-w-5xl mx-auto py-4">
+            <ul class=" flex items-center gap-2">
+                <li><a class="dark:text-white black:text-black text-xl" href="{{ route('documents.index') }}">Pdf Config manager</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {{ $slot }}
+    </main>
 
     @stack('scripts')
 </body>
