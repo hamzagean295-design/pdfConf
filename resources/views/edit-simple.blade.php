@@ -51,6 +51,8 @@
                 overlay.addEventListener('click', (event) => {
                     overlay.removeEventListener('mousemove', updateCords);
                     overlay.classList.remove('cursor-crosshair');
+                    overlay.classList.remove('pointer-events-auto');
+                    overlay.classList.add('pointer-events-none');
                 });
 
             function formEditor(config) {
