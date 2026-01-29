@@ -68,16 +68,18 @@ class DocumentGeneratorController extends Controller
     public function editSimple(Document $document): View
     {
         $pageCount = 0;
+        $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
         if (Storage::disk('public')->exists($document->path)) {
             $fileContent = Storage::disk('public')->get($document->path);
             $pdf = new Fpdi();
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
-
+        $dimensionsPage;
         return view('edit-simple', [
             'document' => $document,
             'pdfUrl' => Storage::url($document->path),
             'totalPages' => $pageCount,
+            'dimensionsPage' => $dimensionsPage
         ]);
     }
 

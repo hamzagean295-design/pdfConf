@@ -2,6 +2,57 @@
     @push('scripts')
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script>
+                const overlay = document.getElementById('pdf-overlay');
+                const cordX = document.getElementById('cord-x');
+                const cordY = document.getElementById('cord-y');
+                const myCursor = document.getElementById('my-cursor');
+
+                myCursor.addEventListener('click', function() {
+                        overlay.addEventListener('mousemove', updateCords);
+                        overlay.classList.add('cursor-crosshair');
+                        overlay.classList.remove('pointer-events-none');
+                        overlay.classList.add('pointer-events-auto');
+
+                });
+
+                function convertToMm(pxValue, isWidth = true) {
+                    const overlay = document.getElementById('pdf-overlay');
+                    const rect = overlay.getBoundingClientRect();
+
+                    // 1. Dimensions théoriques d'un A4 en mm
+                    const A4_WIDTH_MM = 210;
+                    const A4_HEIGHT_MM = 297;
+
+                    // 2. Calcul du ratio (Combien de mm représente 1 pixel à l'écran ?)
+                    // On divise la taille réelle (mm) par la taille affichée (px)
+                    const mmPerPxWidth = A4_WIDTH_MM / rect.width;
+                    const mmPerPxHeight = A4_HEIGHT_MM / rect.height;
+
+                    // 3. Application du ratio selon l'axe
+                    if (isWidth) {
+                        return (pxValue * mmPerPxWidth).toFixed(2);
+                    } else {
+                        return (pxValue * mmPerPxHeight).toFixed(2);
+                    }
+                }
+
+                function updateCords(e) {
+                    const rect = overlay.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const PDF_VIEWER_HEADER_HEIGHT = 56; // px
+                    const y = e.clientY - rect.top - PDF_VIEWER_HEADER_HEIGHT;
+                    cordX.value = convertToMm(x);
+                    cordY.value = convertToMm(y);
+                    cordX.dispatchEvent(new Event('input', { bubbles: true }));
+                    cordY.dispatchEvent(new Event('input', { bubbles: true }));
+
+                }
+
+                overlay.addEventListener('click', (event) => {
+                    overlay.removeEventListener('mousemove', updateCords);
+                    overlay.classList.remove('cursor-crosshair');
+                });
+
             function formEditor(config) {
                 return {
                     // --- STATE ---
@@ -81,6 +132,7 @@
                     },
                     updateColor(event) {
                         if (this.selectedElement()) {
+                            console.log(this.selectedElement(), this.selectedElement().x);
                             this.selectedElement().color = this.hexToRgbArray(event.target.value);
                         }
                     },
@@ -155,10 +207,15 @@
             </aside>
 
             <!-- Colonne du centre : Prévisualisation PDF -->
-            <main class="w-1/2 h-full flex flex-col bg-gray-200">
+            <main class="relative w-1/2 h-full flex flex-col bg-gray-200">
+                <!-- Le PDF (Interactions normales par défaut) -->
                 <embed src="{{ $pdfUrl }}" type="application/pdf" class="w-full h-full">
-            </main>
 
+                <!-- L'overlay (Bloque les interactions seulement quand c'est nécessaire) -->
+                <div id="pdf-overlay"
+                    class="absolute inset-0 z-10 bg-transparent pointer-events-none cursor-crosshair">
+                </div>
+            </main>
             <!-- Colonne de droite : Éditeur de propriétés -->
             <aside class="w-1/4 h-full flex flex-col border-l bg-white">
                 <div class=" p-4 overflow-y-auto">
@@ -184,15 +241,16 @@
                             <label class="block text-sm font-medium">Valeur / Tag / Path</label>
                             <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium">X (mm)</label>
-                                <input type="number" step="0.1" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <input type="number" step="0.1" id="cord-x" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium">Y (mm)</label>
-                                <input type="number" step="0.1" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <input type="number" step="0.1" id="cord-y" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             </div>
+                            <button id="my-cursor" type="button" class="bg-green-300 p-1 border rounded-sm">Définir</button>
                         </div>
                         <div>
                             <label class="block text-sm font-medium">Police</label>
@@ -220,8 +278,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium">Couleur</label>
                             <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
+                            <label class="block text-sm font-medium">Couleur</label>
                         </div>
                     </div>
                 </div>
