@@ -3,7 +3,7 @@
         <h1 class="text-2xl font-bold mb-4">Éditer la Facture #{{ $facture->id }}</h1>
 
         <div class="bg-white shadow-md rounded-lg p-6">
-            <form action="{{ route('facture.update', $facture) }}" method="POST">
+            <form action="{{ route('factures.update', $facture) }}" method="POST">
                 @csrf
                 @method('PUT')
 

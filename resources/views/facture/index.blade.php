@@ -56,6 +56,7 @@
                                 {{ $facture->document->name ?? 'N/A' }}
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <a target="_blank" href="{{ $facture->generatedPdfUrl() }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir Pdf</a>
                                 <a href="{{ route('factures.show', $facture) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir</a>
                                 <a href="{{ route('factures.edit', $facture) }}" class="text-yellow-600 hover:text-yellow-900 mr-3">Éditer</a>
                                 <form action="{{ route('factures.destroy', $facture) }}" method="POST" class="inline-block">
