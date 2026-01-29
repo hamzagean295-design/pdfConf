@@ -3,7 +3,7 @@
         <h1 class="text-2xl font-bold mb-4">Créer une nouvelle Facture</h1>
 
         <div class="bg-white shadow-md rounded-lg p-6">
-            <form action="{{ route('facture.store') }}" method="POST">
+            <form action="{{ route('factures.store') }}" method="POST">
                 @csrf
 
                 <div class="mb-4">
@@ -30,11 +30,26 @@
                     @enderror
                 </div>
 
+                <div class="mb-4">
+                    <label for="template_id" class="block text-gray-700 text-sm font-bold mb-2">Template Document:</label>
+                    <select name="template_id" id="template_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline @error('template_id') border-red-500 @enderror">
+                        <option value="">-- Sélectionner un template --</option>
+                        @foreach ($documents as $document)
+                            <option value="{{ $document->id }}" {{ old('template_id') == $document->id ? 'selected' : '' }}>
+                                {{ $document->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('template_id')
+                        <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <div class="flex items-center justify-between">
                     <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                         Créer Facture
                     </button>
-                    <a href="{{ route('facture.index') }}" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                    <a href="{{ route('factures.index') }}" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
                         Annuler
                     </a>
                 </div>

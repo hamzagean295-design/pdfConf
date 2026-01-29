@@ -44,15 +44,13 @@ new class extends Component
 ?>
 
 <div>
-      <h1 class="text-center pb-2 text-xl font-bold">
-        Configurer votre modèle
         @if($showIt)
             <form wire:submit="save" class="inline">
-                <input type="text" wire:model="name" class="text-center">
+                <input type="text" wire:model="name">
                 <input type="submit" value="sauvegarder" class="text-sm border font-normal p-2 border-b">
             </form>
         @else
-            <span class="border p-1 border-2 border-black border-b" wire:click="doubleClick"> {{ $document->name }} </span>
+            <span wire:click="doubleClick"> {{ $document->name }} </span>
         @endif
     </h1>
 </div>

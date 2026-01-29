@@ -2,7 +2,7 @@
     <div class="container mx-auto p-4">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-bold">Liste des Factures</h1>
-            <a href="{{ route('facture.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <a href="{{ route('factures.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Créer une nouvelle Facture
             </a>
         </div>
@@ -30,7 +30,7 @@
                             Date Facture
                         </th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Document
+                            Template Document
                         </th>
                         <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Actions
@@ -53,12 +53,12 @@
                                 {{ $facture->date_facture }}
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                {{ $facture->document_path ?? 'N/A' }}
+                                {{ $facture->document->name ?? 'N/A' }}
                             </td>
                             <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                <a href="{{ route('facture.show', $facture) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir</a>
-                                <a href="{{ route('facture.edit', $facture) }}" class="text-yellow-600 hover:text-yellow-900 mr-3">Éditer</a>
-                                <form action="{{ route('facture.destroy', $facture) }}" method="POST" class="inline-block">
+                                <a href="{{ route('factures.show', $facture) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Voir</a>
+                                <a href="{{ route('factures.edit', $facture) }}" class="text-yellow-600 hover:text-yellow-900 mr-3">Éditer</a>
+                                <form action="{{ route('factures.destroy', $facture) }}" method="POST" class="inline-block">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')">Supprimer</button>

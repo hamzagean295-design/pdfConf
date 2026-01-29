@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany; // Ajouté
 
 class Document extends Model
 {
@@ -29,4 +30,12 @@ class Document extends Model
     protected $casts = [
         'config' => 'array',
     ];
+
+    /**
+     * Get the factures that use this document as a template.
+     */
+    public function factures(): HasMany
+    {
+        return $this->hasMany(Facture::class, 'template_id');
+    }
 }

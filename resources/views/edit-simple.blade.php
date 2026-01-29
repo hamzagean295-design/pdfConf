@@ -175,7 +175,8 @@
     @endpush
 
     <div class="py-4  overflow-y-scroll">
-        @livewire('templat-name', ['document' => $document])
+        <h1 class="text-center pb-2 text-xl font-bold"> Configurer votre modèle {{ $document->name }} </h1>
+        Configurer votre modèle
         <div x-data="formEditor({
                 elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
                 documentId: {{ $document->id }},

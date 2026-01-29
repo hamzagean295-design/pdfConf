@@ -21,4 +21,5 @@ Route::prefix('documents')->controller(DocumentGeneratorController::class)->grou
     Route::patch('/{document}/config', 'saveConfig');
 });
 
-Route::resource('facture', FactureController::class);
+Route::resource('factures', FactureController::class);
+Route::get('factures/{facture}/download-pdf', [FactureController::class, 'downloadPdf'])->name('factures.downloadPdf');
