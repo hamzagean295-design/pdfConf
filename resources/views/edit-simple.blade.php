@@ -1,6 +1,5 @@
 <x-app-layout>
     @push('scripts')
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script>
                 const overlay = document.getElementById('pdf-overlay');
                 const cordX = document.getElementById('cord-x');
@@ -186,7 +185,7 @@
             <!-- Colonne de gauche : Liste des éléments -->
             <aside class="w-1/4 h-full flex flex-col border-r bg-white">
                 <div class="p-4 border-b">
-                    <button @click="addElement()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
+                    <button @click="addElement()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded cursor-pointer">
                         Ajouter un Élément
                     </button>
                 </div>
@@ -287,7 +286,7 @@
                     </div>
                 </div>
                 <div class="p-4 border-t">
-                    <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400">
+                    <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 cursor-pointer">
                         <span x-show="!isSaving">Sauvegarder la Configuration</span>
                         <span x-show="isSaving">Sauvegarde...</span>
                     </button>

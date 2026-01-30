@@ -14,7 +14,7 @@
                     @forelse ($documents as $document)
                     <tr class="odd:bg-neutral-primary even:bg-neutral-secondary-soft border-b border-default">
                             <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
-                                @livewire('templat-name', ['document' => $document])
+                                @livewire('template-name', ['document' => $document])
                             </th>
                             <td class="px-6 py-4">
                                 <a class="font-medium text-blue-500 text-fg-brand hover:underline"  target="_blank" href="{{ route('documents.show', ['document' => $document]) }}">Voir</a>
