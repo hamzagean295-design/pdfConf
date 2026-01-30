@@ -21,6 +21,15 @@
                         <p class="text-red-500 text-xs italic">{{ $message }}</p>
                     @enderror
                 </div>
+                <div class="mb-4">
+                    <label for="homme" class=" text-gray-700 text-sm font-bold mb-2">H</label>
+                    <input type="radio" id="homme" name="sexe" class="mr-2" value="H" />
+                    <label for="femme" class=" text-gray-700 text-sm font-bold mb-2" >F</label>
+                    <input type="radio" id="femme" name="sexe" value="F"/>
+                    @error('sexe')
+                        <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                    @enderror
+                </div>
 
                 <div class="mb-4">
                     <label for="date_facture" class="block text-gray-700 text-sm font-bold mb-2">Date Facture:</label>

@@ -65,16 +65,30 @@
 
                     // --- INIT ---
                     init() {
-                        this.elements = config.elements.map((el, index) => ({
-                            ...el,
-                            id: Date.now() + index,
-                            page: el.page || 1,
-                            // Assurer les propriétés pour les anciens éléments
-                            font_weight: el.font_weight || 'normal',
-                            font_style: el.font_style || 'normal',
-                            color: el.color || [0, 0, 0], // S'assurer que la couleur est un tableau RGB
-                            type: this.determineElementType(el.value) // Déterminer le type à l'initialisation
-                        }));
+                        this.elements = config.elements.map((el, index) => {
+                            let type = el.type;
+                            if (!type) { // For backward compatibility
+                                if (el.options && Array.isArray(el.options)) {
+                                    type = 'checkbox';
+                                } else if (el.value && el.value.match(/^\{\{.*\}\}$/)) {
+                                    type = 'tag';
+                                } else {
+                                    type = 'text';
+                                }
+                            }
+                            return {
+                                ...el,
+                                id: Date.now() + index,
+                                label: el.label || `Élément ${index + 1}`, // Add a default label
+                                page: el.page || 1,
+                                font_weight: el.font_weight || 'normal',
+                                font_style: el.font_style || 'normal',
+                                color: el.color || [0, 0, 0],
+                                type: type,
+                                // Ensure options is an array for checkboxes, and undefined otherwise
+                                options: type === 'checkbox' ? (el.options || []) : undefined
+                            };
+                        });
                     },
 
                     // --- GETTERS & HELPERS ---
@@ -82,16 +96,9 @@
                         if (!this.selectedId) return null;
                         const element = this.elements.find(el => el.id === this.selectedId);
                         if (element) {
-                            // Assurer que le type est toujours à jour
-                            element.type = this.determineElementType(element.value);
-                            // Convertir la couleur RGB en Hex pour l'input type="color"
                             element.hexColor = this.rgbArrayToHex(element.color);
                         }
                         return element;
-                    },
-
-                    determineElementType(value) {
-                        return value && value.match(/^\{\{.*\}\}$/) ? 'tag' : 'text';
                     },
 
                     rgbArrayToHex(rgbArray) {
@@ -113,8 +120,8 @@
                     addElement() {
                         const newElement = {
                             id: Date.now(),
-                            type: 'text', // Sera mis à jour par determineElementType si la valeur change
-                            label: 'Nouveau Texte',
+                            type: 'text',
+                            label: 'Nouvel élément',
                             value: 'Texte statique',
                             page: 1,
                             x: 10, y: 10,
@@ -133,8 +140,29 @@
                     },
                     updateColor(event) {
                         if (this.selectedElement()) {
-                            console.log(this.selectedElement(), this.selectedElement().x);
                             this.selectedElement().color = this.hexToRgbArray(event.target.value);
+                        }
+                    },
+                    addCheckboxOption() {
+                        const el = this.selectedElement();
+                        if (el && el.type === 'checkbox') {
+                            if (!el.options) {
+                                el.options = [];
+                            }
+                            // Add a new option, staggering the Y coordinate for visibility
+                            const yOffset = el.options.length * 8;
+                            el.options.push({
+                                label: 'Nouvelle option',
+                                value: 'valeur_a_verifier',
+                                x: el.x || 10,
+                                y: (el.y || 10) + yOffset
+                            });
+                        }
+                    },
+                    removeCheckboxOption(index) {
+                        const el = this.selectedElement();
+                        if (el && el.type === 'checkbox' && el.options) {
+                            el.options.splice(index, 1);
                         }
                     },
                     async save() {
@@ -152,18 +180,23 @@
                                 body: JSON.stringify({
                                     config: {
                                         elements: this.elements.map(el => {
-                                            const { id, hexColor, ...rest } = el; // Enlève l'ID temporaire et hexColor
-                                            // Convertir la couleur RGB en hex avant l'envoi
-                                            const colorToSend = this.rgbArrayToHex(rest.color);
-                                            return { ...rest, color: colorToSend };
+                                            const { id, hexColor, ...rest } = el; // Remove temporary frontend properties
+                                            if (rest.type !== 'checkbox') {
+                                                delete rest.options; // Clean up options for non-checkboxes
+                                            }
+                                            return rest; // Send the rest, including the 'color' array
                                         })
                                     }
                                 })
                             });
-                            if (!response.ok) throw new Error('La sauvegarde a échoué.');
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || 'La sauvegarde a échoué.');
+                            }
                             alert('Configuration sauvegardée !');
                         } catch (error) {
-                            alert('Une erreur est survenue.');
+                            console.error('Save error:', error);
+                            alert('Une erreur est survenue: ' + error.message);
                         } finally {
                             this.isSaving = false;
                         }
@@ -189,7 +222,7 @@
                         Ajouter un Élément
                     </button>
                 </div>
-                <div class="flex-grow">
+                <div class="flex-grow overflow-y-auto">
                     <template x-for="element in elements" :key="element.id">
                         <div @click="selectElement(element.id)"
                             class="p-3 border-b cursor-pointer hover:bg-gray-50 flex justify-between items-center"
@@ -215,21 +248,28 @@
 
                 <!-- L'overlay (Bloque les interactions seulement quand c'est nécessaire) -->
                 <div id="pdf-overlay"
-                    class="absolute inset-0 z-10 bg-transparent pointer-events-none cursor-crosshair">
+                    class="absolute inset-0 z-10 bg-transparent pointer-events-none">
                 </div>
             </main>
             <!-- Colonne de droite : Éditeur de propriétés -->
             <aside class="w-1/4 h-full flex flex-col border-l bg-white">
-                <div class=" p-4 overflow-y-auto">
+                <div class="p-4 overflow-y-auto">
                     <h2 class="text-lg font-bold mb-4">Propriétés</h2>
                     <div x-show="!selectedId" class="text-gray-500">
                         Sélectionnez un élément à gauche pour l'éditer.
                     </div>
                     <div x-show="selectedId" x-if="selectedElement()" class="space-y-4">
-                        <!-- Le champ Type est supprimé, il est déduit -->
                         <div>
-                            <label class="block text-sm font-medium">Type Déduit</label>
-                            <input type="text" readonly :value="selectedElement().type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100">
+                            <label class="block text-sm font-medium">Label (pour l'éditeur)</label>
+                            <input type="text" x-model="selectedElement().label" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Type</label>
+                            <select x-model="selectedElement().type" @change="if(selectedElement().type === 'checkbox' && !selectedElement().options) selectedElement().options = []" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="text">Texte Statique</option>
+                                <option value="tag">Tag Dynamique</option>
+                                <option value="checkbox">Case à cocher</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium">Page</label>
@@ -240,10 +280,10 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium">Valeur / Tag / Path</label>
-                            <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <label class="block text-sm font-medium">Valeur / Tag</label>
+                            <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" :placeholder="selectedElement().type === 'checkbox' ? 'ex: @{{user.gender}}' : 'Texte ou @{{tag}}'">
                         </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-3 gap-4" x-show="selectedElement().type !== 'checkbox'">
                             <div>
                                 <label class="block text-sm font-medium">X (mm)</label>
                                 <input type="number" step="0.1" id="cord-x" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -252,40 +292,77 @@
                                 <label class="block text-sm font-medium">Y (mm)</label>
                                 <input type="number" step="0.1" id="cord-y" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             </div>
-                            <button id="my-cursor" type="button" class="bg-green-300 p-1 border rounded-sm">Définir</button>
+                            <button id="my-cursor" type="button" class="bg-green-300 p-1 border rounded-sm self-end mb-1">Définir</button>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium">Police</label>
-                            <input type="text" x-model.debounce.200ms="selectedElement().font_family" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+
+                        <!-- Champs de style (communs) -->
+                        <div class="border-t pt-4 mt-4 space-y-4">
+                            <h3 class="font-semibold" x-text="selectedElement().type === 'checkbox' ? 'Style du marqueur (X)' : 'Style du texte'"></h3>
+                            <div>
+                                <label class="block text-sm font-medium">Police</label>
+                                <input type="text" x-model.debounce.200ms="selectedElement().font_family" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Taille Police</label>
+                                <input type="number" x-model.number="selectedElement().font_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Poids Police</label>
+                                <select x-model="selectedElement().font_weight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="normal">Normal</option>
+                                    <option value="bold">Gras</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Style Police</label>
+                                <select x-model="selectedElement().font_style" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="normal">Normal</option>
+                                    <option value="italic">Italique</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Couleur</label>
+                                <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium">Taille Police</label>
-                            <input type="number" x-model.number="selectedElement().font_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Poids Police</label>
-                            <select x-model="selectedElement().font_weight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <option value="normal">Normal</option>
-                                <option value="bold">Gras</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Style Police</label>
-                            <select x-model="selectedElement().font_style" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <option value="normal">Normal</option>
-                                <option value="italic">Italique</option>
-                                <option value="B">Gras (FPDI)</option>
-                                <option value="I">Italique (FPDI)</option>
-                                <option value="BI">Gras Italique (FPDI)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
-                            <label class="block text-sm font-medium">Couleur</label>
+
+                        <!-- Éditeur d'options pour Checkbox -->
+                        <div x-show="selectedElement().type === 'checkbox'" class="border-t pt-4 mt-4 space-y-3">
+                            <h3 class="font-semibold">Options de la case à cocher</h3>
+                            <p class="text-xs text-gray-500">Définissez les options possibles. La valeur du tag ci-dessus sera comparée à la "valeur attendue" de chaque option pour décider où placer le marqueur.</p>
+                            <button @click="addCheckboxOption()" type="button" class="w-full bg-blue-500 text-white font-bold py-1 px-3 rounded text-sm hover:bg-blue-600">
+                                Ajouter une option
+                            </button>
+                            <template x-for="(option, index) in selectedElement().options" :key="index">
+                                <div class="border p-2 rounded space-y-2 bg-gray-50">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-medium text-sm" x-text="`Option ${index + 1}`"></span>
+                                        <button @click="removeCheckboxOption(index)" type="button" class="text-red-500 hover:text-red-700 text-xl leading-none">&times;</button>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium">Label (pour l'éditeur)</label>
+                                        <input type="text" x-model="option.label" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium">Valeur attendue</label>
+                                        <input type="text" x-model="option.value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-medium">X (mm)</label>
+                                            <input type="number" step="0.1" x-model.number="option.x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium">Y (mm)</label>
+                                            <input type="number" step="0.1" x-model.number="option.y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
-                <div class="p-4 border-t">
+                <div class="p-4 border-t mt-auto">
                     <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 cursor-pointer">
                         <span x-show="!isSaving">Sauvegarder la Configuration</span>
                         <span x-show="isSaving">Sauvegarde...</span>

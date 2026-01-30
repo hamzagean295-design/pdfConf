@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\PdfGenerator;
 
 use App\Models\Document;
+use App\Services\PdfGenerator\Renderers\CheckboxRender;
 use App\Services\PdfGenerator\Renderers\DynamicTagRenderer;
 use App\Services\PdfGenerator\Renderers\ImageRenderer;
 use App\Services\PdfGenerator\Renderers\StaticTextRenderer;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use setasign\Fpdi\Fpdi;
@@ -20,11 +22,13 @@ final class PdfGeneratorService
      * @param StaticTextRenderer $staticTextRenderer Strategy for rendering simple text.
      * @param DynamicTagRenderer $dynamicTagRenderer Strategy for rendering dynamic data tags.
      * @param ImageRenderer $imageRenderer Strategy for rendering images.
+     * @param CheckboxRender $checkboxRender Strategy for rendering checkboxes.
      */
     public function __construct(
         private readonly StaticTextRenderer $staticTextRenderer,
         private readonly DynamicTagRenderer $dynamicTagRenderer,
         private readonly ImageRenderer $imageRenderer,
+        private readonly CheckboxRender $checkboxRender,
     ) {}
 
     /**
@@ -40,6 +44,7 @@ final class PdfGeneratorService
     {
         // It's better to convert array to object for consistent `data_get` behavior.
         $dataObject = is_array($data) ? (object) $data : $data;
+
 
         $pdf = new Fpdi();
 
@@ -58,10 +63,11 @@ final class PdfGeneratorService
                 // Render element only if it belongs to the current page (default to page 1)
                 if ((int)($element['page'] ?? 1) === $pageNo) {
                     match ($element['type']) {
-                        'text'  => $this->staticTextRenderer->render($pdf, $element, $dataObject),
-                        'tag'   => $this->dynamicTagRenderer->render($pdf, $element, $dataObject),
-                        'image' => $this->imageRenderer->render($pdf, $element, $dataObject),
-                        default => throw new InvalidArgumentException("Unknown element type: '{$element['type']}'"),
+                        'text'     => $this->staticTextRenderer->render($pdf, $element, $dataObject),
+                        'tag'      => $this->dynamicTagRenderer->render($pdf, $element, $dataObject),
+                        'image'    => $this->imageRenderer->render($pdf, $element, $dataObject),
+                        'checkbox' => $this->checkboxRender->render($pdf, $element, $dataObject),
+                        default    => throw new InvalidArgumentException("Unknown element type: '{$element['type']}'"),
                     };
                 }
             }

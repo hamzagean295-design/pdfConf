@@ -14,6 +14,7 @@ class Facture extends Model
         'date_facture',
         'document_path', // Path to the GENERATED PDF
         'template_id',   // ID of the Document TEMPLATE
+        'sexe'
     ];
 
     /**

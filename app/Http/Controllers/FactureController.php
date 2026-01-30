@@ -43,6 +43,7 @@ class FactureController extends Controller
             'montant' => 'required|numeric|min:0',
             'date_facture' => 'required|date',
             'template_id' => ['required', 'integer', Rule::exists('documents', 'id')],
+            'sexe' => 'nullable|in:F,H'
         ]);
 
         $facture = Facture::create($validated);
@@ -161,6 +162,7 @@ class FactureController extends Controller
             'customer_name' => $facture->customer_name,
             'montant' => $facture->montant,
             'date_facture' => $facture->date_facture,
+            'sexe' => $facture->sexe,
             'invoice_number' => $facture->id, // Example: use Facture ID as invoice number
             // Add any other data you want to make available to the PDF template
         ];
