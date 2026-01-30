@@ -7,7 +7,7 @@
     <title>PDF Editor - Configuration</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="antialiased bg-gray-100 h-screen overflow-hidden">
+<body class="antialiased bg-gray-100 h-screen">
 
     <header class="bg-black">
         <nav class="max-w-5xl mx-auto py-4">
