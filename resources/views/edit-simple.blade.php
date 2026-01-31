@@ -1,59 +1,167 @@
 <x-app-layout>
     @push('scripts')
+        <script type="module">
+        // If absolute URL from the remote server is provided, configure the CORS
+        // header on that server.
+        var url = '{{ $pdfUrl }}';
+        var pageCount = '{{ $totalPages }}';
+        pageCount = parseInt(pageCount);
+        console.log(pageCount);
+
+        // Loaded via <script> tag, create shortcut to access PDF.js exports.
+        var { pdfjsLib } = globalThis;
+
+        // The workerSrc property shall be specified.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.worker.mjs';
+
+        const Y_FROM_TOP = true;
+        // ============================================
+
+        var canvas = document.getElementById('the-canvas');
+        const demarrer = document.getElementById('demarrer');
+        const cordX = document.getElementById('cord-x');
+        const cordY = document.getElementById('cord-y');
+        let currentPage = document.getElementById('currentPage');
+        const prevPage = document.getElementById('prevPage');
+        const nextPage = document.getElementById('nextPage');
+        const GLOBAL_SCALE = 1;
+
+        let VIEWPORT;
+        let VIEWPORT_ORIGINAL;
+        let PDF_DOCUMENT;
+        let currentPdfPage;
+        var loadingTask = pdfjsLib.getDocument(url);
+        var pageNumber = 1;
+
+        function init() {
+            loadingTask.promise.then(function(pdf) {
+                console.log('PDF loaded');
+                PDF_DOCUMENT = pdf;
+
+                // Prepare canvas using PDF page dimensions
+                pdf.getPage(pageNumber).then(function(page) {
+                    console.log('Page loaded');
+                    currentPdfPage = page;
+
+                    // Viewport avec scale = 1 (dimensions originales du PDF)
+                    var viewportOriginal = page.getViewport({scale: 1});
+                    VIEWPORT_ORIGINAL = viewportOriginal;
+
+                    // Viewport avec scale pour l'affichage
+                    var viewport = page.getViewport({scale: GLOBAL_SCALE});
+                    VIEWPORT = viewport;
+
+                    var context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // Render PDF page into canvas context
+                    var renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    var renderTask = page.render(renderContext);
+                    renderTask.promise.then(function () {
+                        console.log('Page rendered');
+                        console.log('Viewport (scaled):', VIEWPORT);
+                        console.log('Viewport (original):', VIEWPORT_ORIGINAL);
+                        console.log('Canvas size:', canvas.width, 'x', canvas.height);
+
+                        // Afficher la hauteur de la page
+                        const heightMm = (VIEWPORT_ORIGINAL.height * 25.4 / 72).toFixed(2);
+                        const pageHeightEl = document.getElementById('pageHeight');
+                        if (pageHeightEl) {
+                            pageHeightEl.textContent = heightMm;
+                        }
+
+                        // Mettre à jour le texte d'indication
+                        const coordSystemEl = document.getElementById('coordSystem');
+                        if (coordSystemEl) {
+                            coordSystemEl.textContent = Y_FROM_TOP ?
+                                'Y=0 en haut de la page' :
+                                'Y=0 en bas de la page (standard PDF)';
+                        }
+                    });
+                });
+            }, function (reason) {
+                // PDF loading error
+                console.error(reason);
+            });
+
+            currentPage.innerHTML = pageNumber;
+        }
+
+        // WARNING: start
+        init();
+
+        prevPage.addEventListener('click', function() {
+            if(pageNumber <= 1) return;
+            pageNumber-=1;
+            init();
+        });
+
+        nextPage.addEventListener('click', function() {
+            if(pageNumber >= pageCount) return;
+            pageNumber+=1;
+            init();
+        });
+
+        function convertToMm(xCanvas, yCanvas) {
+            // Constante de conversion: 1 point PDF = 25.4/72 mm
+            const MM_PER_POINT = 25.4 / 72;
+
+            // 1. Convertir les coordonnées canvas en points PDF
+            const xPoints = xCanvas / GLOBAL_SCALE;
+
+            // Pour Y: choisir le système de coordonnées
+            let yPoints;
+            if (Y_FROM_TOP) {
+                // Y depuis le haut de la page (0 = haut)
+                yPoints = yCanvas / GLOBAL_SCALE;
+            } else {
+                // Y depuis le bas de la page (0 = bas) - Standard PDF
+                yPoints = VIEWPORT_ORIGINAL.height - (yCanvas / GLOBAL_SCALE);
+            }
+
+            // 2. Convertir les points en millimètres
+            const xMm = (xPoints * MM_PER_POINT) - 2; // 3 => marge d'erreur
+            const yMm = yPoints * MM_PER_POINT;
+
+            return {
+                x: +xMm.toFixed(2),
+                y: +yMm.toFixed(2),
+            };
+        }
+
+        demarrer.addEventListener('click', function () {
+            canvas.addEventListener('mousemove', updateCords);
+            canvas.classList.add('cursor-crosshair');
+        });
+
+        function updateCords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const xCanvasAdjusted = x * scaleX;
+            const yCanvasAdjusted = y * scaleY;
+            console.log(xCanvasAdjusted, yCanvasAdjusted);
+            const cordos = convertToMm(xCanvasAdjusted, yCanvasAdjusted);
+            cordX.value = cordos.x;
+            cordY.value = cordos.y;
+
+            cordX.dispatchEvent(new Event('input', { bubbles: true }));
+            cordY.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        canvas.addEventListener('click', function() {
+            canvas.classList.remove('cursor-crosshair');
+            canvas.removeEventListener('mousemove', updateCords);
+        })
+
+        </script>
         <script>
-                const overlay = document.getElementById('pdf-overlay');
-                const cordX = document.getElementById('cord-x');
-                const cordY = document.getElementById('cord-y');
-                const myCursor = document.getElementById('my-cursor');
-
-                myCursor.addEventListener('click', function() {
-                        overlay.addEventListener('mousemove', updateCords);
-                        overlay.classList.add('cursor-crosshair');
-                        overlay.classList.remove('pointer-events-none');
-                        overlay.classList.add('pointer-events-auto');
-
-                });
-
-                function convertToMm(pxValue, isWidth = true) {
-                    const overlay = document.getElementById('pdf-overlay');
-                    const rect = overlay.getBoundingClientRect();
-
-                    // 1. Dimensions théoriques d'un A4 en mm
-                    const A4_WIDTH_MM = 210;
-                    const A4_HEIGHT_MM = 297;
-
-                    // 2. Calcul du ratio (Combien de mm représente 1 pixel à l'écran ?)
-                    // On divise la taille réelle (mm) par la taille affichée (px)
-                    const mmPerPxWidth = A4_WIDTH_MM / rect.width;
-                    const mmPerPxHeight = A4_HEIGHT_MM / rect.height;
-
-                    // 3. Application du ratio selon l'axe
-                    if (isWidth) {
-                        return (pxValue * mmPerPxWidth).toFixed(2);
-                    } else {
-                        return (pxValue * mmPerPxHeight).toFixed(2);
-                    }
-                }
-
-                function updateCords(e) {
-                    const rect = overlay.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const PDF_VIEWER_HEADER_HEIGHT = 56; // px
-                    const y = e.clientY - rect.top - PDF_VIEWER_HEADER_HEIGHT;
-                    cordX.value = convertToMm(x);
-                    cordY.value = convertToMm(y);
-                    cordX.dispatchEvent(new Event('input', { bubbles: true }));
-                    cordY.dispatchEvent(new Event('input', { bubbles: true }));
-
-                }
-
-                overlay.addEventListener('click', (event) => {
-                    overlay.removeEventListener('mousemove', updateCords);
-                    overlay.classList.remove('cursor-crosshair');
-                    overlay.classList.remove('pointer-events-auto');
-                    overlay.classList.add('pointer-events-none');
-                });
-
             function formEditor(config) {
                 return {
                     // --- STATE ---
@@ -122,7 +230,7 @@
                             id: Date.now(),
                             type: 'text',
                             label: 'Nouvel élément',
-                            value: 'Texte statique',
+                            value: '',
                             page: 1,
                             x: 10, y: 10,
                             font_family: 'Helvetica', font_style: 'normal', font_size: 12,
@@ -206,17 +314,15 @@
         </script>
     @endpush
 
-    <div class="py-4  overflow-y-scroll">
-        <h1 class="text-center pb-2 text-xl font-bold"> Configurer votre modèle {{ $document->name }} </h1>
-        Configurer votre modèle
+    <div class="w-full overflow-y-scroll">
         <div x-data="formEditor({
                 elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
                 documentId: {{ $document->id }},
                 totalPages: {{ $totalPages }}
-            })" x-cloak class="flex h-screen bg-gray-100">
+            })" x-cloak class="flex h-screen bg-red-100">
 
             <!-- Colonne de gauche : Liste des éléments -->
-            <aside class="w-1/4 h-full flex flex-col border-r bg-white">
+            <aside class="h-full flex-1 flex flex-col border-r bg-white">
                 <div class="p-4 border-b">
                     <button @click="addElement()" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded cursor-pointer">
                         Ajouter un Élément
@@ -242,133 +348,224 @@
             </aside>
 
             <!-- Colonne du centre : Prévisualisation PDF -->
-            <main class="relative w-1/2 h-full flex flex-col bg-gray-200">
-                <!-- Le PDF (Interactions normales par défaut) -->
-                <embed src="{{ $pdfUrl }}" type="application/pdf" class="w-full h-full">
-
-                <!-- L'overlay (Bloque les interactions seulement quand c'est nécessaire) -->
-                <div id="pdf-overlay"
-                    class="absolute inset-0 z-10 bg-transparent pointer-events-none">
+            <main class="flex-3 relative h-full flex flex-col bg-gray-200">
+                <canvas id="the-canvas" class="border-2 border-gray-400 shadow-lg"></canvas>
+                <div class="flex items-center justify-center gap-3 mt-4">
+                    <button type="button" class="border px-4 py-2 cursor-pointer rounded bg-gray-100 hover:bg-gray-200 font-medium" id="prevPage">← Précédente</button>
+                    <span class="text-xl font-bold mx-2">Page <span id="currentPage">1</span></span>
+                    <button class="border px-4 py-2 rounded cursor-pointer bg-gray-100 hover:bg-gray-200 font-medium" type="button" id="nextPage">Suivante →</button>
+                </div>
+                <div class="text-center mt-2 text-sm text-gray-600">
+                    <b>Dimensions originales: hauteur {{ $dimensionsPage['height'] }}px, largeur {{ $dimensionsPage['width'] }}px</b>
                 </div>
             </main>
             <!-- Colonne de droite : Éditeur de propriétés -->
-            <aside class="w-1/4 h-full flex flex-col border-l bg-white">
-                <div class="p-4 overflow-y-auto">
-                    <h2 class="text-lg font-bold mb-4">Propriétés</h2>
-                    <div x-show="!selectedId" class="text-gray-500">
-                        Sélectionnez un élément à gauche pour l'éditer.
+<aside class="h-full flex-1 flex flex-col border-l bg-white">
+    <div class="p-4 overflow-y-auto space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-700">
+            Propriétés
+        </h2>
+
+        <div x-show="!selectedId" class="text-sm text-gray-400">
+            Sélectionnez un élément à gauche pour l’éditer.
+        </div>
+
+        <div x-show="selectedId" x-if="selectedElement()" class="space-y-5">
+
+            <!-- Label + Type -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Label</label>
+                    <input
+                        type="text"
+                        x-model="selectedElement().label"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Type</label>
+                    <select
+                        x-model="selectedElement().type"
+                        @change="if(selectedElement().type === 'checkbox' && !selectedElement().options) selectedElement().options = []"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                        <option value="text">Texte</option>
+                        <option value="tag">Tag</option>
+                        <option value="checkbox">Checkbox</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Page + Valeur -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Page</label>
+                    <select
+                        x-model.number="selectedElement().page"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                        <template x-for="i in totalPages" :key="i">
+                            <option :value="i" x-text="i"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Valeur / Tag</label>
+                    <input
+                        type="text"
+                        x-model.debounce.200ms="selectedElement().value"
+                        :placeholder="selectedElement().type === 'checkbox' ? '@{{user.gender}}' : 'Texte ou @{{tag}}'"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                </div>
+            </div>
+
+            <!-- Coordonnées -->
+            <div
+                class="grid grid-cols-3 gap-3 items-end"
+                x-show="selectedElement().type !== 'checkbox'"
+            >
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">X (mm)</label>
+                    <input
+                        type="number"
+                        step="0.1"
+                        id="cord-x"
+                        x-model.number="selectedElement().x"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Y (mm)</label>
+                    <input
+                        type="number"
+                        id="cord-y"
+                        step="0.1"
+                        x-model.number="selectedElement().y"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                </div>
+
+                <button
+                    id="demarrer"
+                    type="button"
+                    class="h-9 text-sm border rounded bg-gray-100 hover:bg-gray-200"
+                >
+                    Définir
+                </button>
+            </div>
+
+            <!-- Style -->
+            <div class="pt-4 border-t space-y-3">
+                <h3
+                    class="text-xs font-semibold uppercase text-gray-600"
+                    x-text="selectedElement().type === 'checkbox' ? 'Style du marqueur' : 'Style du texte'"
+                ></h3>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Police</label>
+                        <input
+                            type="text"
+                            x-model.debounce.200ms="selectedElement().font_family"
+                            class="w-full h-9 px-2 text-sm border rounded"
+                        >
                     </div>
-                    <div x-show="selectedId" x-if="selectedElement()" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium">Label (pour l'éditeur)</label>
-                            <input type="text" x-model="selectedElement().label" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Type</label>
-                            <select x-model="selectedElement().type" @change="if(selectedElement().type === 'checkbox' && !selectedElement().options) selectedElement().options = []" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <option value="text">Texte Statique</option>
-                                <option value="tag">Tag Dynamique</option>
-                                <option value="checkbox">Case à cocher</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Page</label>
-                            <select x-model.number="selectedElement().page" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <template x-for="i in totalPages" :key="i">
-                                    <option :value="i" x-text="i"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Valeur / Tag</label>
-                            <input type="text" x-model.debounce.200ms="selectedElement().value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" :placeholder="selectedElement().type === 'checkbox' ? 'ex: @{{user.gender}}' : 'Texte ou @{{tag}}'">
-                        </div>
-                        <div class="grid grid-cols-3 gap-4" x-show="selectedElement().type !== 'checkbox'">
-                            <div>
-                                <label class="block text-sm font-medium">X (mm)</label>
-                                <input type="number" step="0.1" id="cord-x" x-model.number="selectedElement().x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Y (mm)</label>
-                                <input type="number" step="0.1" id="cord-y" x-model.number="selectedElement().y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <button id="my-cursor" type="button" class="bg-green-300 p-1 border rounded-sm self-end mb-1">Définir</button>
-                        </div>
 
-                        <!-- Champs de style (communs) -->
-                        <div class="border-t pt-4 mt-4 space-y-4">
-                            <h3 class="font-semibold" x-text="selectedElement().type === 'checkbox' ? 'Style du marqueur (X)' : 'Style du texte'"></h3>
-                            <div>
-                                <label class="block text-sm font-medium">Police</label>
-                                <input type="text" x-model.debounce.200ms="selectedElement().font_family" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Taille Police</label>
-                                <input type="number" x-model.number="selectedElement().font_size" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Poids Police</label>
-                                <select x-model="selectedElement().font_weight" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="normal">Normal</option>
-                                    <option value="bold">Gras</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Style Police</label>
-                                <select x-model="selectedElement().font_style" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="normal">Normal</option>
-                                    <option value="italic">Italique</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Couleur</label>
-                                <input type="color" :value="selectedElement().hexColor" @input="updateColor($event)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-10">
-                            </div>
-                        </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Taille</label>
+                        <input
+                            type="number"
+                            x-model.number="selectedElement().font_size"
+                            class="w-full h-9 px-2 text-sm border rounded"
+                        >
+                    </div>
 
-                        <!-- Éditeur d'options pour Checkbox -->
-                        <div x-show="selectedElement().type === 'checkbox'" class="border-t pt-4 mt-4 space-y-3">
-                            <h3 class="font-semibold">Options de la case à cocher</h3>
-                            <p class="text-xs text-gray-500">Définissez les options possibles. La valeur du tag ci-dessus sera comparée à la "valeur attendue" de chaque option pour décider où placer le marqueur.</p>
-                            <button @click="addCheckboxOption()" type="button" class="w-full bg-blue-500 text-white font-bold py-1 px-3 rounded text-sm hover:bg-blue-600">
-                                Ajouter une option
-                            </button>
-                            <template x-for="(option, index) in selectedElement().options" :key="index">
-                                <div class="border p-2 rounded space-y-2 bg-gray-50">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-medium text-sm" x-text="`Option ${index + 1}`"></span>
-                                        <button @click="removeCheckboxOption(index)" type="button" class="text-red-500 hover:text-red-700 text-xl leading-none">&times;</button>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium">Label (pour l'éditeur)</label>
-                                        <input type="text" x-model="option.label" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium">Valeur attendue</label>
-                                        <input type="text" x-model="option.value" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-medium">X (mm)</label>
-                                            <input type="number" step="0.1" x-model.number="option.x" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-medium">Y (mm)</label>
-                                            <input type="number" step="0.1" x-model.number="option.y" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Poids</label>
+                        <select
+                            x-model="selectedElement().font_weight"
+                            class="w-full h-9 px-2 text-sm border rounded"
+                        >
+                            <option value="normal">Normal</option>
+                            <option value="bold">Gras</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Style</label>
+                        <select
+                            x-model="selectedElement().font_style"
+                            class="w-full h-9 px-2 text-sm border rounded"
+                        >
+                            <option value="normal">Normal</option>
+                            <option value="italic">Italique</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-xs text-gray-500 mb-1">Couleur</label>
+                        <input
+                            type="color"
+                            :value="selectedElement().hexColor"
+                            @input="updateColor($event)"
+                            class="w-full h-9 border rounded"
+                        >
                     </div>
                 </div>
-                <div class="p-4 border-t mt-auto">
-                    <button @click="save()" :disabled="isSaving" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400 cursor-pointer">
-                        <span x-show="!isSaving">Sauvegarder la Configuration</span>
-                        <span x-show="isSaving">Sauvegarde...</span>
-                    </button>
-                </div>
-            </aside>
+            </div>
+
+            <!-- Checkbox options -->
+            <div x-show="selectedElement().type === 'checkbox'" class="pt-4 border-t space-y-3">
+                <h3 class="text-xs font-semibold uppercase text-gray-600">
+                    Options Checkbox
+                </h3>
+
+                <button
+                    @click="addCheckboxOption()"
+                    type="button"
+                    class="w-full h-9 text-sm border rounded bg-blue-50 hover:bg-blue-100"
+                >
+                    + Ajouter une option
+                </button>
+
+                <template x-for="(option, index) in selectedElement().options" :key="index">
+                    <div class="p-3 border rounded bg-gray-50 space-y-2">
+                        <div class="flex justify-between items-center text-xs font-medium">
+                            <span x-text="`Option ${index + 1}`"></span>
+                            <button
+                                @click="removeCheckboxOption(index)"
+                                class="text-red-500 hover:text-red-700"
+                            >&times;</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <input x-model="option.label" placeholder="Label" class="h-8 px-2 text-sm border rounded">
+                            <input x-model="option.value" placeholder="Valeur" class="h-8 px-2 text-sm border rounded">
+                            <input type="number" step="0.1" x-model.number="option.x" placeholder="X" class="h-8 px-2 text-sm border rounded">
+                            <input type="number" step="0.1" x-model.number="option.y" placeholder="Y" class="h-8 px-2 text-sm border rounded">
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-4 border-t">
+        <button
+            @click="save()"
+            :disabled="isSaving"
+            class="w-full h-10 text-sm font-medium text-white bg-indigo-600 rounded disabled:bg-gray-400"
+        >
+            <span x-show="!isSaving">Sauvegarder</span>
+            <span x-show="isSaving">Sauvegarde...</span>
+        </button>
+    </div>
+</aside>
         </div>
     </div>
 </x-app-layout>

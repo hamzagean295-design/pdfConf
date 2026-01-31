@@ -1,0 +1,170 @@
+  var url = '{{ $pdfUrl }}';
+  var pageCount = '{{ $pageCount }}';
+  pageCount = parseInt(pageCount);
+  console.log(pageCount);
+
+  // Loaded via <script> tag, create shortcut to access PDF.js exports.
+  var { pdfjsLib } = globalThis;
+
+  // The workerSrc property shall be specified.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.worker.mjs';
+
+  const Y_FROM_TOP = true;
+  // ============================================
+
+  var canvas = document.getElementById('the-canvas');
+  const demarrer = document.getElementById('demarrer');
+  const cordX = document.getElementById('cord-x');
+  const cordY = document.getElementById('cord-y');
+  let currentPage = document.getElementById('currentPage');
+  const prevPage = document.getElementById('prevPage');
+  const nextPage = document.getElementById('nextPage');
+  const GLOBAL_SCALE = 1;
+
+  let VIEWPORT;
+  let VIEWPORT_ORIGINAL;
+  let PDF_DOCUMENT;
+  let currentPdfPage;
+  var loadingTask = pdfjsLib.getDocument(url);
+  var pageNumber = 1;
+
+  function init() {
+    loadingTask.promise.then(function(pdf) {
+        console.log('PDF loaded');
+        PDF_DOCUMENT = pdf;
+
+        // Prepare canvas using PDF page dimensions
+        pdf.getPage(pageNumber).then(function(page) {
+            console.log('Page loaded');
+            currentPdfPage = page;
+
+            // Viewport avec scale = 1 (dimensions originales du PDF)
+            var viewportOriginal = page.getViewport({scale: 1});
+            VIEWPORT_ORIGINAL = viewportOriginal;
+
+            // Viewport avec scale pour l'affichage
+            var viewport = page.getViewport({scale: GLOBAL_SCALE});
+            VIEWPORT = viewport;
+
+            var context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Render PDF page into canvas context
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            var renderTask = page.render(renderContext);
+            renderTask.promise.then(function () {
+                console.log('Page rendered');
+                console.log('Viewport (scaled):', VIEWPORT);
+                console.log('Viewport (original):', VIEWPORT_ORIGINAL);
+                console.log('Canvas size:', canvas.width, 'x', canvas.height);
+
+                // Afficher la hauteur de la page
+                const heightMm = (VIEWPORT_ORIGINAL.height * 25.4 / 72).toFixed(2);
+                const pageHeightEl = document.getElementById('pageHeight');
+                if (pageHeightEl) {
+                    pageHeightEl.textContent = heightMm;
+                }
+
+                // Mettre à jour le texte d'indication
+                const coordSystemEl = document.getElementById('coordSystem');
+                if (coordSystemEl) {
+                    coordSystemEl.textContent = Y_FROM_TOP ?
+                        'Y=0 en haut de la page' :
+                        'Y=0 en bas de la page (standard PDF)';
+                }
+            });
+        });
+    }, function (reason) {
+          // PDF loading error
+          console.error(reason);
+    });
+
+    currentPage.innerHTML = pageNumber;
+  }
+
+  // WARNING: start
+  init();
+
+  prevPage.addEventListener('click', function() {
+    if(pageNumber <= 1) return;
+    pageNumber-=1;
+    init();
+  });
+
+  nextPage.addEventListener('click', function() {
+    if(pageNumber >= pageCount) return;
+    pageNumber+=1;
+    init();
+  });
+
+  function convertToMm(xCanvas, yCanvas) {
+      // Constante de conversion: 1 point PDF = 25.4/72 mm
+      const MM_PER_POINT = 25.4 / 72;
+
+      // 1. Convertir les coordonnées canvas en points PDF
+      const xPoints = xCanvas / GLOBAL_SCALE;
+
+      // Pour Y: choisir le système de coordonnées
+      let yPoints;
+      if (Y_FROM_TOP) {
+          // Y depuis le haut de la page (0 = haut)
+          yPoints = yCanvas / GLOBAL_SCALE;
+      } else {
+          // Y depuis le bas de la page (0 = bas) - Standard PDF
+          yPoints = VIEWPORT_ORIGINAL.height - (yCanvas / GLOBAL_SCALE);
+      }
+
+      // 2. Convertir les points en millimètres
+      const xMm = (xPoints * MM_PER_POINT) - 3; // 3 => marge d'erreur
+      const yMm = yPoints * MM_PER_POINT;
+
+      return {
+          x: +xMm.toFixed(2),
+          y: +yMm.toFixed(2),
+      };
+  }
+
+  demarrer.addEventListener('click', function () {
+      canvas.addEventListener('mousemove', updateCords);
+      canvas.classList.add('cursor-crosshair');
+  });
+
+  function updateCords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const cordos = convertToMm(x, y);
+      cordX.value = cordos.x;
+      cordY.value = cordos.y;
+  }
+
+  canvas.addEventListener('click', function() {
+      canvas.classList.remove('cursor-crosshair');
+      canvas.removeEventListener('mousemove', updateCords);
+  })
+
+</script>
+
+<div>
+      <aside class="">
+          <button type="button">Ajouter un Element</button>
+          <button type="button">
+              <b>{{ Nouveau Element }}</b>
+              <span>Type: text, Page: 2</span>
+          </button>
+          <span class="text-red-800">x</span>
+      </aside>
+      <div class="">
+          <canvas id="the-canvas"></canvas>
+      </div>
+      <aside class="">
+          <h2>Propriétés</h2>
+          <i>Sélectionnez un élément à gauche pour l'éditer.</i>
+      </aside>
+</div>
+
+</x-app-layout>

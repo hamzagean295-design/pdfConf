@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>PDF Editor - Configuration</title>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/build/pdf.mjs" type="module"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="antialiased bg-gray-100 h-screen">

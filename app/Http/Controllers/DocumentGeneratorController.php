@@ -56,9 +56,19 @@ class DocumentGeneratorController extends Controller
      */
     public function edit(Document $document): View
     {
-        return view('setup', [
+
+        $pageCount = 0;
+        $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
+        if (Storage::disk('public')->exists($document->path)) {
+            $fileContent = Storage::disk('public')->get($document->path);
+            $pdf = new Fpdi();
+            $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
+        }
+        return view('document.edit-canvas', [
             'document' => $document,
-            'pdfUrl' => Storage::url($document->path)
+            'pdfUrl' => Storage::url($document->path),
+            'pageCount' => $pageCount,
+            'dimensionsPage' => $dimensionsPage
         ]);
     }
 
