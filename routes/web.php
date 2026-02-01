@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CnssController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentGeneratorController;
 use App\Http\Controllers\FactureController;
@@ -23,3 +24,11 @@ Route::prefix('documents')->controller(DocumentGeneratorController::class)->grou
 
 Route::resource('factures', FactureController::class);
 Route::get('factures/{facture}/download-pdf', [FactureController::class, 'downloadPdf'])->name('factures.downloadPdf');
+
+Route::resource('cnss', CnssController::class);
+Route::get('cnss/{cnss}/download-pdf', [CnssController::class, 'downloadPdf'])->name('cnss.downloadPdf');
+
+
+Route::get('/edit-simple', function () {
+    return view('edit-simple');
+});

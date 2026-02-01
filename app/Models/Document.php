@@ -38,4 +38,9 @@ class Document extends Model
     {
         return $this->hasMany(Facture::class, 'template_id');
     }
+
+    public function cnsses(): HasMany
+    {
+        return $this->hasMany(Cnss::class, 'template_id');
+    }
 }

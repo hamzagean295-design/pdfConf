@@ -15,6 +15,7 @@
             <ul class=" flex items-center gap-2">
                 <li><a class="text-white black:text-black text-xl" href="{{ route('documents.index') }}">Pdf Config manager</a></li>
                 <li><a class="text-white black:text-black underline pl-8" href="{{ route('factures.index') }}">Factures</a></li>
+                <li><a class="text-white black:text-black underline pl-8" href="{{ route('cnss.index') }}">Cnss</a></li>
             </ul>
         </nav>
     </header>

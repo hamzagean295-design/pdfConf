@@ -64,7 +64,7 @@ class DocumentGeneratorController extends Controller
             $pdf = new Fpdi();
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
-        return view('document.edit-canvas', [
+        return view('document.edit', [
             'document' => $document,
             'pdfUrl' => Storage::url($document->path),
             'pageCount' => $pageCount,
