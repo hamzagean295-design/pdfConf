@@ -47,14 +47,23 @@ return [
             'report' => false,
         ],
 
+        /*
+            AWS_ACCESS_KEY_ID="tid_cuJamHgCUYdrwBZVXKFPagyPdRKPufzQbYsacwMCjZDeiPCmHm"
+            AWS_SECRET_ACCESS_KEY="tsec_VIsMzHOV_vWReKjQ8IIfdtRM3A9Nj-9eQLFnf1NFuzDHJfYmtlsJ7ceTRwhmitelAi0yiB"
+            AWS_DEFAULT_REGION=auto
+            AWS_BUCKET="public-files-ukv5iclirzfy"
+            AWS_ENDPOINT="https://public-files-ukv5iclirzfy.storage.railway.app"
+            AWS_URL="https://s3-public-presigner-production.up.railway.app"
+            AWS_USE_PATH_STYLE_ENDPOINT=true
+        */
         's3' => [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
+            'key' => env('AWS_ACCESS_KEY_ID', "tid_cuJamHgCUYdrwBZVXKFPagyPdRKPufzQbYsacwMCjZDeiPCmHm"),
+            'secret' => env('AWS_SECRET_ACCESS_KEY', "tsec_VIsMzHOV_vWReKjQ8IIfdtRM3A9Nj-9eQLFnf1NFuzDHJfYmtlsJ7ceTRwhmitelAi0yiB"),
+            'region' => env('AWS_DEFAULT_REGION', "auto"),
+            'bucket' => env('AWS_BUCKET', "public-files-ukv5iclirzfy"),
             'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
+            'endpoint' => env('AWS_ENDPOINT', "https://public-files-ukv5iclirzfy.storage.railway.app"),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
