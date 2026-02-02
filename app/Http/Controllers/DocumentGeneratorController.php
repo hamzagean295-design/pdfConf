@@ -85,11 +85,20 @@ class DocumentGeneratorController extends Controller
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
         $dimensionsPage;
+        $fonts = [
+            'Arial',
+            'Courier',
+            'Helvetica',
+            'Symbol',
+            'Times',
+            'ZapfDingbats',
+        ];
         return view('edit-simple', [
             'document' => $document,
             'pdfUrl' => Storage::url($document->path),
             'totalPages' => $pageCount,
-            'dimensionsPage' => $dimensionsPage
+            'dimensionsPage' => $dimensionsPage,
+            'fonts' => $fonts
         ]);
     }
 
@@ -103,29 +112,20 @@ class DocumentGeneratorController extends Controller
      */
     public function download(Document $document, PdfGeneratorService $pdfGenerator): Response
     {
-        // --- Bonus "Pro" ---
-        // On simule un objet de données complexe avec stdClass.
-        // Cela prouve que le système est découplé et peut accepter n'importe quel
-        // objet, pas seulement un modèle Eloquent.
-        $data = new stdClass();
-        $data->customer = (object) [
-            'name' => 'John Doe Inc.',
-            'age' => '30',
-            'address' => '123 Laravel Lane',
-        ];
-        $data->invoice = (object) [
-            'number' => 'INV-2024-00123',
-            'date' => now()->format('d/m/Y'),
-            'total' => 99.99,
-        ];
-        // --- Fin du Bonus ---
 
         // 1. Lire le contenu du fichier PDF et extraire la configuration des éléments
         if (!Storage::disk('public')->exists($document->path)) {
             throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
         }
+        $data = [];
         $pdfFileContent = Storage::disk('public')->get($document->path);
         $elementsConfig = $document->config['elements'] ?? [];
+        foreach ($elementsConfig as $el) {
+            if ($el['type'] == 'tag' || $el['type'] == 'checkbox') {
+                $key = trim($el['value'], '{} ');
+                $data[$key] = $el['valueTest'];
+            }
+        }
 
         // 2. Appel du service pour générer le contenu brut du PDF
         $pdfContent = $pdfGenerator->generate($pdfFileContent, $elementsConfig, $data);
@@ -181,6 +181,7 @@ class DocumentGeneratorController extends Controller
             'config.elements.*.label' => ['required', 'string', 'max:255'],
             'config.elements.*.page' => ['required', 'integer', 'min:1'],
             'config.elements.*.value' => ['required', 'string'],
+            'config.elements.*.valueTest' => ['nullable', 'string'],
 
             // X and Y are not required for the checkbox group container itself.
             'config.elements.*.x' => ['required_unless:config.elements.*.type,checkbox', 'nullable', 'numeric'],

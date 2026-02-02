@@ -169,6 +169,7 @@
                     selectedId: null,
                     documentId: config.documentId,
                     totalPages: config.totalPages,
+                    fonts: config.fonts,
                     isSaving: false,
 
                     // --- INIT ---
@@ -231,9 +232,10 @@
                             type: 'text',
                             label: 'Nouvel élément',
                             value: '',
+                            valueTest: '',
                             page: 1,
                             x: 10, y: 10,
-                            font_family: 'Helvetica', font_style: 'normal', font_size: 12,
+                            font_family: 'Arial', font_style: 'normal', font_size: 12,
                             font_weight: 'normal',
                             color: [0, 0, 0]
                         };
@@ -318,7 +320,8 @@
         <div x-data="formEditor({
                 elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
                 documentId: {{ $document->id }},
-                totalPages: {{ $totalPages }}
+                totalPages: {{ $totalPages }},
+                fonts: {{ Illuminate\Support\Js::from($fonts ?? []) }}
             })" x-cloak class="flex h-screen bg-red-100">
 
             <!-- Colonne de gauche : Liste des éléments -->
@@ -373,7 +376,7 @@
         <div x-show="selectedId" x-if="selectedElement()" class="space-y-5">
 
             <!-- Label + Type -->
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Label</label>
                     <input
@@ -395,10 +398,6 @@
                         <option value="checkbox">Checkbox</option>
                     </select>
                 </div>
-            </div>
-
-            <!-- Page + Valeur -->
-            <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Page</label>
                     <select
@@ -410,13 +409,24 @@
                         </template>
                     </select>
                 </div>
+            </div>
 
+            <!-- Page + Valeur -->
+            <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Valeur / Tag</label>
+                    <label class="block text-xs text-gray-500 mb-1">Valeur</label>
                     <input
                         type="text"
                         x-model.debounce.200ms="selectedElement().value"
                         :placeholder="selectedElement().type === 'checkbox' ? '@{{user.gender}}' : 'Texte ou @{{tag}}'"
+                        class="w-full h-9 px-2 text-sm border rounded"
+                    >
+                </div>
+                <div x-show="selectedElement().type == 'tag' || selectedElement().type == 'checkbox' ">
+                    <label class="block text-xs text-gray-500 mb-1">Valeur de test</label>
+                    <input
+                        type="text"
+                        x-model.debounce.200ms="selectedElement().valueTest"
                         class="w-full h-9 px-2 text-sm border rounded"
                     >
                 </div>
@@ -425,7 +435,6 @@
             <!-- Coordonnées -->
             <div
                 class="grid grid-cols-3 gap-3 items-end"
-                x-show="selectedElement().type !== 'checkbox'"
             >
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">X (mm)</label>
@@ -468,11 +477,14 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">Police</label>
-                        <input
-                            type="text"
-                            x-model.debounce.200ms="selectedElement().font_family"
+                        <select
+                            x-model.number="selectedElement().font_family"
                             class="w-full h-9 px-2 text-sm border rounded"
                         >
+                            <template x-for="f in fonts" :key="f">
+                                <option :value="f" x-text="f"></option>
+                            </template>
+                        </select>
                     </div>
 
                     <div>
@@ -556,14 +568,22 @@
 
     <!-- Footer -->
     <div class="p-4 border-t">
-        <button
-            @click="save()"
-            :disabled="isSaving"
-            class="w-full h-10 text-sm font-medium text-white bg-indigo-600 rounded disabled:bg-gray-400"
-        >
-            <span x-show="!isSaving">Sauvegarder</span>
-            <span x-show="isSaving">Sauvegarde...</span>
-        </button>
+        <div class=" flex items-center gap-1">
+            <button
+                @click="save()"
+                :disabled="isSaving"
+                class="w-full h-10 text-sm font-medium text-white bg-indigo-600 rounded disabled:bg-gray-400"
+            >
+                <span x-show="!isSaving">Sauvegarder</span>
+                <span x-show="isSaving">Sauvegarde...</span>
+            </button>
+            <a target="_blank" href="{{ route('documents.download', $document->id) }}"
+                class="flex justify-center items-center  w-full h-10 text-sm font-medium text-white bg-emerald-600 rounded disabled:bg-gray-400"
+            >
+                Tester
+            </a>
+        </div>
+        <i>sauvegarder avant de testet!</i>
     </div>
 </aside>
         </div>
