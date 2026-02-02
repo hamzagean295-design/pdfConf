@@ -30,7 +30,9 @@ class DocumentGeneratorController extends Controller
 
     public function show(Document $document)
     {
+        // On force l'utilisation du disque s3 pour générer l'URL correcte
         $url = Storage::url($document->path);
+
         return redirect($url);
     }
 
@@ -41,7 +43,10 @@ class DocumentGeneratorController extends Controller
             'document' => 'required|file|mimes:pdf',
         ]);
 
-        $path = $request->file('document')->store('templates', 'public');
+        $path = $request->file('document')->store('templates', [
+            'disk' => 's3',
+            'visibility' => 'public'
+        ]);
 
         Document::create([
             'name' => $validated['name'],
@@ -59,8 +64,8 @@ class DocumentGeneratorController extends Controller
 
         $pageCount = 0;
         $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
-        if (Storage::disk('public')->exists($document->path)) {
-            $fileContent = Storage::disk('public')->get($document->path);
+        if (Storage::exists($document->path)) {
+            $fileContent = Storage::disk('s3')->get($document->path);
             $pdf = new Fpdi();
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
@@ -78,24 +83,25 @@ class DocumentGeneratorController extends Controller
     public function editSimple(Document $document): View
     {
         $pageCount = 0;
-        $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
-        if (Storage::disk('public')->exists($document->path)) {
-            $fileContent = Storage::disk('public')->get($document->path);
-            $pdf = new Fpdi();
-            $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
+        $dimensionsPage = ['width' => 210, 'height' => 297];
+
+        try {
+            // Au lieu de exists(), on tente directement de récupérer le contenu
+            $fileContent = Storage::disk('s3')->get($document->path);
+
+            $pdf = new \setasign\Fpdi\Fpdi();
+            $pageCount = $pdf->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($fileContent));
+        } catch (\Exception $e) {
+            // Si le fichier est introuvable ou erreur S3, on laisse pageCount à 0
+            // Vous pouvez logger l'erreur pour débugger : \Log::error($e->getMessage());
+            $pageCount = 0;
         }
-        $dimensionsPage;
-        $fonts = [
-            'Arial',
-            'Courier',
-            'Helvetica',
-            'Symbol',
-            'Times',
-            'ZapfDingbats',
-        ];
+
+        $fonts = ['Arial', 'Courier', 'Helvetica', 'Symbol', 'Times', 'ZapfDingbats'];
+
         return view('edit-simple', [
             'document' => $document,
-            'pdfUrl' => Storage::url($document->path),
+            'pdfUrl' => Storage::disk('s3')->url($document->path),
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
             'fonts' => $fonts
@@ -114,11 +120,11 @@ class DocumentGeneratorController extends Controller
     {
 
         // 1. Lire le contenu du fichier PDF et extraire la configuration des éléments
-        if (!Storage::disk('public')->exists($document->path)) {
+        if (!Storage::exists($document->path)) {
             throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
         }
         $data = [];
-        $pdfFileContent = Storage::disk('public')->get($document->path);
+        $pdfFileContent = Storage::get($document->path);
         $elementsConfig = $document->config['elements'] ?? [];
         foreach ($elementsConfig as $el) {
             if ($el['type'] == 'tag' || $el['type'] == 'checkbox') {
@@ -228,12 +234,14 @@ class DocumentGeneratorController extends Controller
 
     public function destroy(Document $document)
     {
-        if (Storage::disk('public')->exists($document->path)) {
-            Storage::disk('public')->delete($document->path);
+        try {
+            // Supprimer directement sans vérifier l'existence avant
+            Storage::disk('s3')->delete($document->path);
+            $document->delete();
+            return back();
+        } catch (\Exception $e) {
+            // Cela vous affichera l'erreur REELLE (ex: identifiants invalides)
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-        // 2. Supprimer l'enregistrement en base de données
-        $document->delete();
-
-        return back();
     }
 }

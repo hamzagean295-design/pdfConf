@@ -154,7 +154,7 @@ class FactureController extends Controller
             throw new FileNotFoundException("Source PDF template not found at path: {$documentTemplate->path}");
         }
 
-        $pdfFileContent = Storage::disk('public')->get($documentTemplate->path);
+        $pdfFileContent = Storage::disk('s3')->get($documentTemplate->path);
         $elementsConfig = $documentTemplate->config['elements'] ?? [];
 
         // Prepare data for PDF generation using Facture model attributes
