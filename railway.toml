@@ -10,7 +10,7 @@ npm run build
 preDeployCommand = """
 composer dump-autoload &&
 php artisan optimize:clear &&
-php artisan migration --force &&
+php artisan migrate --force &&
 php artisan storage:link &&
 npm ci && npm run build
 """
