@@ -28,14 +28,10 @@ class DocumentGeneratorController extends Controller
         return view('documents.create');
     }
 
+
     public function show(Document $document)
     {
-        // Génère une URL signée valable 5 minutes
-        $url = Storage::disk('s3')->temporaryUrl(
-            $document->path,
-            now()->addMinutes(5)
-        );
-
+        $url = Storage::url($document->path);
         return redirect($url);
     }
 
@@ -46,7 +42,7 @@ class DocumentGeneratorController extends Controller
             'document' => 'required|file|mimes:pdf',
         ]);
 
-        $path = $request->file('document')->store('templates', 's3', 'public');
+        $path = $request->file('document')->store('templates', 'public');
 
         Document::create([
             'name' => $validated['name'],
@@ -56,30 +52,29 @@ class DocumentGeneratorController extends Controller
         return to_route('documents.index');
     }
 
+
     public function edit(Document $document): View
     {
 
         $pageCount = 0;
-        $dimensionsPage = ['width' => 210, 'height' => 297];
-
-        try {
-            // On récupère le contenu pour FPDI
-            $fileContent = Storage::disk('s3')->get($document->path);
-
-            $pdf = new \setasign\Fpdi\Fpdi();
-            // Utilisation du StreamReader pour lire le flux binaire
-            $pageCount = $pdf->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($fileContent));
-        } catch (\Exception $e) {
-            \Log::error("Erreur S3/PDF : " . $e->getMessage());
-            $pageCount = 0;
+        $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
+        if (Storage::disk('public')->exists($document->path)) {
+            $fileContent = Storage::disk('public')->get($document->path);
+            $pdf = new Fpdi();
+            $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
-
-        $fonts = ['Arial', 'Courier', 'Helvetica', 'Symbol', 'Times', 'ZapfDingbats'];
-
+        $dimensionsPage;
+        $fonts = [
+            'Arial',
+            'Courier',
+            'Helvetica',
+            'Symbol',
+            'Times',
+            'ZapfDingbats',
+        ];
         return view('documents.edit', [
             'document' => $document,
-            // CRUCIAL : URL signée pour que le navigateur puisse afficher le PDF
-            'pdfUrl' => Storage::disk('s3')->temporaryUrl($document->path, now()->addHours(1)),
+            'pdfUrl' => Storage::url($document->path),
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
             'fonts' => $fonts
@@ -91,11 +86,11 @@ class DocumentGeneratorController extends Controller
     {
 
         // 1. Lire le contenu du fichier PDF et extraire la configuration des éléments
-        if (!Storage::exists($document->path)) {
+        if (!Storage::disk('public')->exists($document->path)) {
             throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
         }
         $data = [];
-        $pdfFileContent = Storage::get($document->path);
+        $pdfFileContent = Storage::disk('public')->get($document->path);
         $elementsConfig = $document->config['elements'] ?? [];
         foreach ($elementsConfig as $el) {
             if ($el['type'] == 'tag' || $el['type'] == 'checkbox') {
@@ -197,12 +192,12 @@ class DocumentGeneratorController extends Controller
 
     public function destroy(Document $document)
     {
-        try {
-            Storage::disk('s3')->delete($document->path);
-            $document->delete();
-            return back();
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        if (Storage::disk('public')->exists($document->path)) {
+            Storage::disk('public')->delete($document->path);
         }
+        // 2. Supprimer l'enregistrement en base de données
+        $document->delete();
+
+        return back();
     }
 }
