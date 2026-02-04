@@ -2,133 +2,70 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CnssRequest;
 use App\Models\Cnss;
 use App\Models\Document;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 use App\Services\PdfGenerator\PdfGeneratorService;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class CnssController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(): View
     {
         $cnsses = Cnss::all();
         return view('cnss.index', compact('cnsses'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): View
     {
         $documents = Document::all(['id', 'name']);
         return view('cnss.create', compact('documents'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request, PdfGeneratorService $pdfGenerator): RedirectResponse
+    public function store(CnssRequest $request, PdfGeneratorService $pdfGenerator): RedirectResponse
     {
-        $validated = $request->validate([
-            'patient' => 'required|string|max:255',
-            'cin' => 'required|string|max:255',
-            'adresse' => 'required|string|max:255',
-            'date_naissance' => 'required|date',
-            'sexe' => ['required', Rule::in(['F', 'H'])],
-            'parente' => ['required', Rule::in(['Assuré', 'Enfant', 'Conjoint'])],
-            'service_hospitalisation' => 'required|string|max:255',
-            'inp' => 'required|string|max:255',
-            'nature_hospitalisation' => 'required|string|max:255',
-            'motif_hospitalisation' => 'required|string|max:255',
-            'date_previsible_hospitalisation' => 'required|date',
-            'date_en_urgence_le' => 'required|date',
-            'nom_etablissement' => 'required|string|max:255',
-            'code_etablissement' => 'required|string|max:255',
-            'tel' => 'required|string|max:255',
-            'total_estime' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'template_id' => ['required', 'integer', Rule::exists('documents', 'id')],
-        ]);
-
-        $cnss = Cnss::create($validated);
+        $cnss = Cnss::create($request->validated());
 
         try {
             $this->generateAndStoreCnssPdf($cnss, $pdfGenerator);
         } catch (FileNotFoundException $e) {
-            \Log::error("PDF generation failed for new Cnss {$cnss->id}: " . $e->getMessage());
+            Log::error("PDF generation failed for new Cnss {$cnss->id}: " . $e->getMessage());
             return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
         return redirect()->route('cnss.index')->with('success', 'Cnss créée avec succès.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Cnss $cnss): View
     {
         return view('cnss.show', compact('cnss'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Cnss $cnss): View
     {
         $documents = Document::all(['id', 'name']);
         return view('cnss.edit', compact('cnss', 'documents'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Cnss $cnss, PdfGeneratorService $pdfGenerator): RedirectResponse
+    public function update(CnssRequest $request, Cnss $cnss, PdfGeneratorService $pdfGenerator): RedirectResponse
     {
-        $validated = $request->validate([
-            'patient' => 'required|string|max:255',
-            'cin' => 'required|string|max:255',
-            'adresse' => 'required|string|max:255',
-            'date_naissance' => 'required|date',
-            'sexe' => ['required', Rule::in(['F', 'H'])],
-            'parente' => ['required', Rule::in(['Assuré', 'Enfant', 'Conjoint'])],
-            'service_hospitalisation' => 'required|string|max:255',
-            'inp' => 'required|string|max:255',
-            'nature_hospitalisation' => 'required|string|max:255',
-            'motif_hospitalisation' => 'required|string|max:255',
-            'date_previsible_hospitalisation' => 'required|date',
-            'date_en_urgence_le' => 'required|date',
-            'nom_etablissement' => 'required|string|max:255',
-            'code_etablissement' => 'required|string|max:255',
-            'tel' => 'required|string|max:255',
-            'total_estime' => 'required|numeric|min:0',
-            'total' => 'required|numeric|min:0',
-            'template_id' => ['required', 'integer', Rule::exists('documents', 'id')],
-        ]);
-
-        $cnss->update($validated);
+        $cnss->update($request->validated());
 
         try {
             $this->generateAndStoreCnssPdf($cnss, $pdfGenerator);
         } catch (FileNotFoundException $e) {
-            \Log::error("PDF generation failed for Cnss {$cnss->id}: " . $e->getMessage());
+            Log::error("PDF generation failed for Cnss {$cnss->id}: " . $e->getMessage());
             return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
         return redirect()->route('cnss.index')->with('success', 'Cnss mise à jour avec succès.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Cnss $cnss): RedirectResponse
     {
         if ($cnss->document_path && Storage::disk('public')->exists($cnss->document_path)) {
@@ -139,9 +76,6 @@ class CnssController extends Controller
         return redirect()->route('cnss.index')->with('success', 'Cnss supprimée avec succès.');
     }
 
-    /**
-     * Serves the generated PDF for a specific Cnss.
-     */
     public function downloadPdf(Cnss $cnss): Response|RedirectResponse
     {
         if (!$cnss->document_path || !Storage::disk('public')->exists($cnss->document_path)) {
@@ -157,9 +91,6 @@ class CnssController extends Controller
         ]);
     }
 
-    /**
-     * Generates and stores the PDF for a given Cnss.
-     */
     private function generateAndStoreCnssPdf(Cnss $cnss, PdfGeneratorService $pdfGenerator): void
     {
         $documentTemplate = $cnss->document;

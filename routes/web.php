@@ -2,14 +2,14 @@
 
 use App\Http\Controllers\CnssController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DocumentGeneratorController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FactureController;
 
 Route::get('/', function () {
     return to_route('documents.index');
 });
 
-Route::prefix('documents')->controller(DocumentGeneratorController::class)->group(function () {
+Route::prefix('documents')->controller(DocumentController::class)->group(function () {
     Route::get('/', 'index')->name('documents.index');
     Route::get('/create', 'create')->name('documents.create');
     Route::post('/', 'store')->name('documents.store');

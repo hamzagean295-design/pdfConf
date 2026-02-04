@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SaveDocumentConfigRequest;
+use App\Http\Requests\StoreDocumentRequest;
 use App\Models\Document;
 use App\Services\PdfGenerator\PdfGeneratorService;
 use Illuminate\Contracts\Filesystem\FileNotFoundException; // Ajouté
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException; // Ajouté
 use Illuminate\View\View;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\StreamReader;
-use stdClass;
 
-class DocumentGeneratorController extends Controller
+class DocumentController extends Controller
 {
 
     public function index()
@@ -35,12 +34,9 @@ class DocumentGeneratorController extends Controller
         return redirect($url);
     }
 
-    public function store(Request $request)
+    public function store(StoreDocumentRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:50',
-            'document' => 'required|file|mimes:pdf',
-        ]);
+        $validated = $request->validated();
 
         $path = $request->file('document')->store('templates', 'public');
 
@@ -58,6 +54,7 @@ class DocumentGeneratorController extends Controller
 
         $pageCount = 0;
         $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
+        // NOTE: should i specify the disk in the controller, is it a good practice ??
         if (Storage::disk('public')->exists($document->path)) {
             $fileContent = Storage::disk('public')->get($document->path);
             $pdf = new Fpdi();
@@ -112,63 +109,9 @@ class DocumentGeneratorController extends Controller
         return response($pdfContent, 200, $headers);
     }
 
-    public function saveConfig(Request $request, Document $document)
+    public function saveConfig(SaveDocumentConfigRequest $request, Document $document)
     {
-        // --- Pre-process input to normalize color format ---
-        $config = $request->input('config', []);
-        if (isset($config['elements']) && is_array($config['elements'])) {
-            $elements = $config['elements'];
-            foreach ($elements as $key => $element) {
-                // If color is a valid hex string, convert it to an RGB array before validation.
-                if (isset($element['color']) && is_string($element['color']) && preg_match('/^#([0-9a-fA-F]{3}){1,2}$/', $element['color'])) {
-                    $hex = ltrim($element['color'], '#');
-                    if (strlen($hex) == 3) {
-                        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-                    }
-                    $elements[$key]['color'] = [
-                        hexdec(substr($hex, 0, 2)),
-                        hexdec(substr($hex, 2, 2)),
-                        hexdec(substr($hex, 4, 2)),
-                    ];
-                }
-            }
-            $config['elements'] = $elements;
-            // Replace the request's config with the normalized one.
-            $request->merge(['config' => $config]);
-        }
-
-        // --- Validation ---
-        $validated = $request->validate([
-            'config' => ['required', 'array'],
-            'config.elements' => ['nullable', 'array'],
-            'config.elements.*.type' => ['required', 'string', 'in:text,tag,image,checkbox'],
-            'config.elements.*.label' => ['required', 'string', 'max:255'],
-            'config.elements.*.page' => ['required', 'integer', 'min:1'],
-            'config.elements.*.value' => ['required', 'string'],
-            'config.elements.*.valueTest' => ['nullable', 'string'],
-
-            // X and Y are not required for the checkbox group container itself.
-            'config.elements.*.x' => ['required_unless:config.elements.*.type,checkbox', 'nullable', 'numeric'],
-            'config.elements.*.y' => ['required_unless:config.elements.*.type,checkbox', 'nullable', 'numeric'],
-
-            'config.elements.*.font_family' => ['nullable', 'string'],
-            'config.elements.*.font_style' => ['nullable', 'string'],
-            'config.elements.*.font_size' => ['nullable', 'numeric'],
-            'config.elements.*.font_weight' => ['nullable', 'string'],
-
-            // Color is now expected to be an array of 3 integers.
-            'config.elements.*.color' => ['nullable', 'array'],
-            'config.elements.*.color.0' => ['required_with:config.elements.*.color', 'integer', 'min:0', 'max:255'], // R
-            'config.elements.*.color.1' => ['required_with:config.elements.*.color', 'integer', 'min:0', 'max:255'], // G
-            'config.elements.*.color.2' => ['required_with:config.elements.*.color', 'integer', 'min:0', 'max:255'], // B
-
-            // Validation for checkbox options.
-            'config.elements.*.options' => ['required_if:config.elements.*.type,checkbox', 'nullable', 'array'],
-            'config.elements.*.options.*.label' => ['sometimes', 'required', 'string'],
-            'config.elements.*.options.*.value' => ['sometimes', 'required', 'string'],
-            'config.elements.*.options.*.x' => ['sometimes', 'required', 'numeric'],
-            'config.elements.*.options.*.y' => ['sometimes', 'required', 'numeric'],
-        ]);
+        $validated = $request->validated();
 
         // --- Final Processing & Saving ---
         $finalElements = collect($validated['config']['elements'] ?? [])->map(function ($element) {
@@ -201,3 +144,4 @@ class DocumentGeneratorController extends Controller
         return back();
     }
 }
+

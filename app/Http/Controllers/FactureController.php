@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use App\Services\PdfGenerator\PdfGeneratorService;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class FactureController extends Controller
 {
@@ -52,7 +53,7 @@ class FactureController extends Controller
             $this->generateAndStoreFacturePdf($facture, $pdfGenerator);
         } catch (FileNotFoundException $e) {
             // Log the error and redirect with an error message
-            \Log::error("PDF generation failed for new Facture {$facture->id}: " . $e->getMessage());
+            Log::error("PDF generation failed for new Facture {$facture->id}: " . $e->getMessage());
             return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
@@ -93,7 +94,7 @@ class FactureController extends Controller
         try {
             $this->generateAndStoreFacturePdf($facture, $pdfGenerator);
         } catch (FileNotFoundException $e) {
-            \Log::error("PDF generation failed for Facture {$facture->id}: " . $e->getMessage());
+            Log::error("PDF generation failed for Facture {$facture->id}: " . $e->getMessage());
             return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
