@@ -381,10 +381,6 @@
                     <button class="border px-4 py-2 rounded cursor-pointer bg-gray-100 hover:bg-gray-200 font-medium"
                         type="button" id="nextPage">Suivante →</button>
                 </div>
-                <div class="text-center mt-2 text-sm text-gray-600">
-                    <b>Dimensions originales: hauteur {{ $dimensionsPage['height'] }}px, largeur
-                        {{ $dimensionsPage['width'] }}px</b>
-                </div>
             </main>
             <!-- Colonne de droite : Éditeur de propriétés -->
             <aside class="h-full flex-1 flex flex-col  bg-white">
@@ -459,7 +455,7 @@
                             </div>
 
                             <button id="demarrer" type="button"
-                                class="h-9 flex items-center justify-center text-sm border cursor-pointer z-20 rounded-md sm:text-sm">
+                                class="h-9 w-9 flex items-center justify-center text-sm border cursor-pointer z-20 rounded-[100%] sm:text-sm">
                                 <img src="{{ asset('target.png') }}" alt="target" width="30" class="z-10">
                             </button>
                         </div>
@@ -561,7 +557,7 @@
                             Tester
                         </a>
                     </div>
-                    <i class="mt-2 text-red-700 block font-normal text-center mx-auto">sauvegarder avant le test!</i>
+                    <i class="mt-2 text-red-700 block font-normal">sauvegarder avant le test!</i>
                 </div>
             </aside>
         </div>
