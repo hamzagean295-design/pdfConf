@@ -31,7 +31,7 @@ return new class extends Migration
             $table->decimal('total_estime');
             $table->decimal('total');
             $table->string('document_path')->nullable();
-            $table->foreignId('template_id')->nullable()->constrained('documents');
+            $table->foreignId('template_id')->nullable()->constrained('documents')->onDelete('set null');
             $table->timestamps();
         });
     }

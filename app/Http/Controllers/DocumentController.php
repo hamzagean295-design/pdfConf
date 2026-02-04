@@ -38,7 +38,7 @@ class DocumentController extends Controller
     {
         $validated = $request->validated();
 
-        $path = $request->file('document')->store('templates', 'public');
+        $path = $request->file('document')->store('templates');
 
         Document::create([
             'name' => $validated['name'],
@@ -54,9 +54,8 @@ class DocumentController extends Controller
 
         $pageCount = 0;
         $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
-        // NOTE: should i specify the disk in the controller, is it a good practice ??
-        if (Storage::disk('public')->exists($document->path)) {
-            $fileContent = Storage::disk('public')->get($document->path);
+        if (Storage::exists($document->path)) {
+            $fileContent = Storage::get($document->path);
             $pdf = new Fpdi();
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
@@ -83,11 +82,11 @@ class DocumentController extends Controller
     {
 
         // 1. Lire le contenu du fichier PDF et extraire la configuration des éléments
-        if (!Storage::disk('public')->exists($document->path)) {
+        if (!Storage::exists($document->path)) {
             throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
         }
         $data = [];
-        $pdfFileContent = Storage::disk('public')->get($document->path);
+        $pdfFileContent = Storage::get($document->path);
         $elementsConfig = $document->config['elements'] ?? [];
         foreach ($elementsConfig as $el) {
             if ($el['type'] == 'tag' || $el['type'] == 'checkbox') {
@@ -135,8 +134,8 @@ class DocumentController extends Controller
 
     public function destroy(Document $document)
     {
-        if (Storage::disk('public')->exists($document->path)) {
-            Storage::disk('public')->delete($document->path);
+        if (Storage::exists($document->path)) {
+            Storage::delete($document->path);
         }
         // 2. Supprimer l'enregistrement en base de données
         $document->delete();

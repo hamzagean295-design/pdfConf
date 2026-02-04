@@ -106,8 +106,8 @@ class FactureController extends Controller
      */
     public function destroy(Facture $facture): RedirectResponse
     {
-        if ($facture->document_path && Storage::disk('public')->exists($facture->document_path)) {
-            Storage::disk('public')->delete($facture->document_path);
+        if ($facture->document_path && Storage::exists($facture->document_path)) {
+            Storage::delete($facture->document_path);
         }
         $facture->delete();
 
@@ -120,16 +120,16 @@ class FactureController extends Controller
      * @param Facture $facture
      * @return Response|RedirectResponse
      */
-    public function downloadPdf(Facture $facture): Response|RedirectResponse
+    public function downloadPdf(Facture $facture): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
-        if (!$facture->document_path || !Storage::disk('public')->exists($facture->document_path)) {
+        if (!$facture->document_path || !Storage::exists($facture->document_path)) {
             return redirect()->back()->withErrors(['pdf_download' => 'Le PDF généré pour cette facture est introuvable.']);
         }
 
-        $filePath = Storage::disk('public')->path($facture->document_path);
+        $filePath = Storage::path($facture->document_path);
         $fileName = 'facture_' . $facture->id . '.pdf';
 
-        return response()->file($filePath, [
+        return response()->download($filePath, $fileName, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $fileName . '"',
         ]);
@@ -151,11 +151,11 @@ class FactureController extends Controller
             throw new FileNotFoundException("No document template found for Facture ID: {$facture->id} (template_id: {$facture->template_id})");
         }
 
-        if (!Storage::disk('public')->exists($documentTemplate->path)) {
+        if (!Storage::exists($documentTemplate->path)) {
             throw new FileNotFoundException("Source PDF template not found at path: {$documentTemplate->path}");
         }
 
-        $pdfFileContent = Storage::disk('public')->get($documentTemplate->path);
+        $pdfFileContent = Storage::get($documentTemplate->path);
         $elementsConfig = $documentTemplate->config['elements'] ?? [];
 
         // Prepare data for PDF generation using Facture model attributes
@@ -174,11 +174,11 @@ class FactureController extends Controller
         $fileName = 'factures/facture_' . $facture->id . '_' . now()->format('YmdHis') . '.pdf';
 
         // Delete old generated PDF if exists
-        if ($facture->document_path && Storage::disk('public')->exists($facture->document_path)) {
-            Storage::disk('public')->delete($facture->document_path);
+        if ($facture->document_path && Storage::exists($facture->document_path)) {
+            Storage::delete($facture->document_path);
         }
 
-        Storage::disk('public')->put($fileName, $generatedPdfContent);
+        Storage::put($fileName, $generatedPdfContent);
 
         $facture->update(['document_path' => $fileName]);
     }

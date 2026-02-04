@@ -68,21 +68,21 @@ class CnssController extends Controller
 
     public function destroy(Cnss $cnss): RedirectResponse
     {
-        if ($cnss->document_path && Storage::disk('public')->exists($cnss->document_path)) {
-            Storage::disk('public')->delete($cnss->document_path);
+        if ($cnss->document_path && Storage::exists($cnss->document_path)) {
+            Storage::delete($cnss->document_path);
         }
         $cnss->delete();
 
         return redirect()->route('cnss.index')->with('success', 'Cnss supprimée avec succès.');
     }
 
-    public function downloadPdf(Cnss $cnss): Response|RedirectResponse
+    public function downloadPdf(Cnss $cnss): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
-        if (!$cnss->document_path || !Storage::disk('public')->exists($cnss->document_path)) {
+        if (!$cnss->document_path || !Storage::exists($cnss->document_path)) {
             return redirect()->back()->withErrors(['pdf_download' => 'Le PDF généré pour cette cnss est introuvable.']);
         }
 
-        $filePath = Storage::disk('public')->path($cnss->document_path);
+        $filePath = Storage::path($cnss->document_path);
         $fileName = 'cnss_' . $cnss->id . '.pdf';
 
         return response()->file($filePath, [
@@ -99,11 +99,11 @@ class CnssController extends Controller
             throw new FileNotFoundException("No document template found for Cnss ID: {$cnss->id} (template_id: {$cnss->template_id})");
         }
 
-        if (!Storage::disk('public')->exists($documentTemplate->path)) {
+        if (!Storage::exists($documentTemplate->path)) {
             throw new FileNotFoundException("Source PDF template not found at path: {$documentTemplate->path}");
         }
 
-        $pdfFileContent = Storage::disk('public')->get($documentTemplate->path);
+        $pdfFileContent = Storage::get($documentTemplate->path);
         $elementsConfig = $documentTemplate->config['elements'] ?? [];
 
         $data = (object) $cnss->toArray();
@@ -112,11 +112,11 @@ class CnssController extends Controller
 
         $fileName = 'cnss/cnss_' . $cnss->id . '_' . now()->format('YmdHis') . '.pdf';
 
-        if ($cnss->document_path && Storage::disk('public')->exists($cnss->document_path)) {
-            Storage::disk('public')->delete($cnss->document_path);
+        if ($cnss->document_path && Storage::exists($cnss->document_path)) {
+            Storage::delete($cnss->document_path);
         }
 
-        Storage::disk('public')->put($fileName, $generatedPdfContent);
+        Storage::put($fileName, $generatedPdfContent);
 
         $cnss->update(['document_path' => $fileName]);
     }
