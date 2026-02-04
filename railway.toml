@@ -1,18 +1,13 @@
 [build]
 builder = "nixpacks"
 buildCommand = """
-composer install --optimize-autoloader --no-interaction && \
-npm ci && \
 npm run build
 """
 
 [deploy]
 preDeployCommand = """
-composer dump-autoload &&
 php artisan optimize:clear &&
 php artisan migrate --force &&
 php artisan storage:link &&
-npm ci && npm run build
 """
 
-startCommand = "php artisan serve --host=0.0.0.0 --port ${PORT}"
