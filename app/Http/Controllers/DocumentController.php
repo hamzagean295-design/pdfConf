@@ -29,7 +29,7 @@ class DocumentController extends Controller
 
     public function show(Document $document)
     {
-        $url = Storage::url($document->path);
+        $url = Storage::temporaryUrl($document->path, now()->addMinutes(5));
 
         return redirect($url);
     }
@@ -71,7 +71,7 @@ class DocumentController extends Controller
 
         return view('documents.edit', [
             'document' => $document,
-            'pdfUrl' => Storage::url($document->path),
+            'pdfUrl' => Storage::temporaryUrl($document->path, now()->addHours(1)),
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
             'fonts' => $fonts,
@@ -101,7 +101,7 @@ class DocumentController extends Controller
         // 3. Définition des headers pour une prévisualisation dans le navigateur
         $headers = [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$document->name.'.pdf"',
+            'Content-Disposition' => 'inline; filename="' . $document->name . '.pdf"',
         ];
 
         // 4. Retour d'une réponse Laravel avec le contenu et les headers
@@ -112,7 +112,6 @@ class DocumentController extends Controller
     {
         $validated = $request->validated();
 
-        // --- Final Processing & Saving ---
         $finalElements = collect($validated['config']['elements'] ?? [])->map(function ($element) {
             // For non-checkbox types, ensure 'options' is not persisted.
             if ($element['type'] !== 'checkbox') {
@@ -138,7 +137,6 @@ class DocumentController extends Controller
         if (Storage::exists($document->path)) {
             Storage::delete($document->path);
         }
-        // 2. Supprimer l'enregistrement en base de données
         $document->delete();
 
         return back();

@@ -30,6 +30,6 @@ class Facture extends Model
      */
     public function generatedPdfUrl(): ?string
     {
-        return $this->document_path ? Storage::url($this->document_path) : null;
+        return $this->document_path ? Storage::temporaryUrl($this->document_path, now()->addMinutes(5)) : null;
     }
 }

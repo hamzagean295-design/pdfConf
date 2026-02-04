@@ -55,9 +55,9 @@ class FactureController extends Controller
             $this->generateAndStoreFacturePdf($facture, $pdfGenerator);
         } catch (FileNotFoundException $e) {
             // Log the error and redirect with an error message
-            Log::error("PDF generation failed for new Facture {$facture->id}: ".$e->getMessage());
+            Log::error("PDF generation failed for new Facture {$facture->id}: " . $e->getMessage());
 
-            return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : '.$e->getMessage()]);
+            return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
         return redirect()->route('factures.index')->with('success', 'Facture créée avec succès.');
@@ -98,9 +98,9 @@ class FactureController extends Controller
         try {
             $this->generateAndStoreFacturePdf($facture, $pdfGenerator);
         } catch (FileNotFoundException $e) {
-            Log::error("PDF generation failed for Facture {$facture->id}: ".$e->getMessage());
+            Log::error("PDF generation failed for Facture {$facture->id}: " . $e->getMessage());
 
-            return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : '.$e->getMessage()]);
+            return redirect()->back()->withInput()->withErrors(['pdf_generation' => 'Erreur lors de la génération du PDF : ' . $e->getMessage()]);
         }
 
         return redirect()->route('factures.index')->with('success', 'Facture mise à jour avec succès.');
@@ -119,11 +119,6 @@ class FactureController extends Controller
         return redirect()->route('factures.index')->with('success', 'Facture supprimée avec succès.');
     }
 
-    /**
-     * Serves the generated PDF for a specific Facture.
-     *
-     * @return Response|RedirectResponse
-     */
     public function downloadPdf(Facture $facture): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         if (! $facture->document_path || ! Storage::exists($facture->document_path)) {
@@ -131,11 +126,11 @@ class FactureController extends Controller
         }
 
         $filePath = Storage::path($facture->document_path);
-        $fileName = 'facture_'.$facture->id.'.pdf';
+        $fileName = 'facture_' . $facture->id . '.pdf';
 
         return response()->download($filePath, $fileName, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
         ]);
     }
 
@@ -172,7 +167,7 @@ class FactureController extends Controller
         $generatedPdfContent = $pdfGenerator->generate($pdfFileContent, $elementsConfig, $data);
 
         // Define path to store the generated PDF
-        $fileName = 'factures/facture_'.$facture->id.'_'.now()->format('YmdHis').'.pdf';
+        $fileName = 'factures/facture_' . $facture->id . '_' . now()->format('YmdHis') . '.pdf';
 
         // Delete old generated PDF if exists
         if ($facture->document_path && Storage::exists($facture->document_path)) {
