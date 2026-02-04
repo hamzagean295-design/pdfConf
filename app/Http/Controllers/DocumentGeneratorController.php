@@ -30,8 +30,11 @@ class DocumentGeneratorController extends Controller
 
     public function show(Document $document)
     {
-        // On force l'utilisation du disque s3 pour générer l'URL correcte
-        $url = Storage::url($document->path);
+        // Génère une URL signée valable 5 minutes
+        $url = Storage::disk('s3')->temporaryUrl(
+            $document->path,
+            now()->addMinutes(5)
+        );
 
         return redirect($url);
     }
@@ -43,10 +46,7 @@ class DocumentGeneratorController extends Controller
             'document' => 'required|file|mimes:pdf',
         ]);
 
-        $path = $request->file('document')->store('templates', [
-            'disk' => 's3',
-            'visibility' => 'public'
-        ]);
+        $path = $request->file('document')->store('templates', 's3', 'public');
 
         Document::create([
             'name' => $validated['name'],
@@ -77,23 +77,20 @@ class DocumentGeneratorController extends Controller
         ]);
     }
 
-    /**
-     * Shows the simple (form-based) PDF editor interface.
-     */
     public function editSimple(Document $document): View
     {
         $pageCount = 0;
         $dimensionsPage = ['width' => 210, 'height' => 297];
 
         try {
-            // Au lieu de exists(), on tente directement de récupérer le contenu
+            // On récupère le contenu pour FPDI
             $fileContent = Storage::disk('s3')->get($document->path);
 
             $pdf = new \setasign\Fpdi\Fpdi();
+            // Utilisation du StreamReader pour lire le flux binaire
             $pageCount = $pdf->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($fileContent));
         } catch (\Exception $e) {
-            // Si le fichier est introuvable ou erreur S3, on laisse pageCount à 0
-            // Vous pouvez logger l'erreur pour débugger : \Log::error($e->getMessage());
+            \Log::error("Erreur S3/PDF : " . $e->getMessage());
             $pageCount = 0;
         }
 
@@ -101,7 +98,8 @@ class DocumentGeneratorController extends Controller
 
         return view('edit-simple', [
             'document' => $document,
-            'pdfUrl' => Storage::disk('s3')->url($document->path),
+            // CRUCIAL : URL signée pour que le navigateur puisse afficher le PDF
+            'pdfUrl' => Storage::disk('s3')->temporaryUrl($document->path, now()->addHours(1)),
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
             'fonts' => $fonts
