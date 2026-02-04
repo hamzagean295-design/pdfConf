@@ -15,7 +15,7 @@ final readonly class CheckboxRender implements ElementRendererInterface
         $key = trim($element['value'] ?? '', '{} ');
 
         // If there's no key or no options, there's nothing to do.
-        if (empty($key) || empty($element['options']) || !is_array($element['options'])) {
+        if (empty($key) || empty($element['options']) || ! is_array($element['options'])) {
             return;
         }
 

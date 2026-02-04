@@ -27,7 +27,7 @@ class SaveDocumentConfigRequest extends FormRequest
                 if (isset($element['color']) && is_string($element['color']) && preg_match('/^#([0-9a-fA-F]{3}){1,2}$/', $element['color'])) {
                     $hex = ltrim($element['color'], '#');
                     if (strlen($hex) == 3) {
-                        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+                        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
                     }
                     $elements[$key]['color'] = [
                         hexdec(substr($hex, 0, 2)),

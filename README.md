@@ -31,16 +31,23 @@ This tool simplifies the process of modifying PDF templates in a Laravel project
 Here is a simplified overview of the main project directories:
 
 ```
-.
+```
 app
 ├── Http
-│   └── Controllers
-│       ├── Controller.php
-│       ├── DocumentGeneratorController.php
-│       └── FactureController.php
+│   ├── Controllers
+│   │   ├── CnssController.php
+│   │   ├── Controller.php
+│   │   ├── DocumentController.php
+│   │   └── FactureController.php
+│   └── Requests
+│       ├── CnssRequest.php
+│       ├── SaveDocumentConfigRequest.php
+│       └── StoreDocumentRequest.php
 ├── Models
+│   ├── Cnss.php
 │   ├── Document.php
-│   └── Facture.php
+│   ├── Facture.php
+│   └── User.php
 ├── Providers
 │   └── AppServiceProvider.php
 └── Services
@@ -49,9 +56,25 @@ app
         │   └── ElementRendererInterface.php
         ├── PdfGeneratorService.php
         └── Renderers
+            ├── CheckboxRender.php
             ├── DynamicTagRenderer.php
             ├── ImageRenderer.php
             └── StaticTextRenderer.php
+database
+├── database.sqlite
+├── factories
+│   └── UserFactory.php
+├── migrations
+│   ├── 0001_01_01_000000_create_users_table.php
+│   ├── 0001_01_01_000001_create_cache_table.php
+│   ├── 0001_01_01_000002_create_jobs_table.php
+│   ├── 2026_01_28_152413_create_documents_table.php
+│   ├── 2026_01_29_114334_create_factures_table.php
+│   ├── 2026_01_29_162822_add_template_id_to_factures_table.php
+│   ├── 2026_01_30_144742_add_sexe_to_factures_table.php
+│   └── 2026_01_31_111117_create_cnsses_table.php
+└── seeders
+    └── DatabaseSeeder.php
 resources
 ├── css
 │   └── app.css
@@ -59,29 +82,39 @@ resources
 │   ├── app.js
 │   └── bootstrap.js
 └── views
-    ├── components
-    │   ├── app-layout.blade.php
-    │   └── ⚡template-name.blade.php
+    ├── cnss
+    │   ├── create.blade.php
+    │   ├── edit.blade.php
+    │   ├── index.blade.php
+    │   └── show.blade.php
     ├── documents
     │   ├── create.blade.php
+    │   ├── edit.blade.php
     │   └── index.blade.php
-    ├── edit-simple.blade.php
     ├── facture
     │   ├── create.blade.php
     │   ├── edit.blade.php
     │   ├── index.blade.php
     │   └── show.blade.php
-    ├── layouts
-    │   └── app.blade.php
-    └── welcome.blade.php
-routes
-├── console.php
-└── web.php
-storage/app/public
-├── factures
-└── templates
+    └── layouts
+        └── app.blade.php
+public
+├── build
+│   ├── assets
+│   │   ├── app-4u5Jb2Nr.js
+│   │   └── app-st8k4Iyk.css
+│   └── manifest.json
+├── favicon.ico
+├── hot
+├── index.php
+├── js
+│   ├── pdf.mjs
+│   └── pdf.worker.mjs
+├── robots.txt
 
 ```
+
+
 
 ## Architecture
 

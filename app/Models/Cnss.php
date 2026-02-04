@@ -27,7 +27,7 @@ class Cnss extends Model
         'total_estime',
         'total',
         'template_id',
-        'document_path'
+        'document_path',
     ];
 
     public function document(): BelongsTo

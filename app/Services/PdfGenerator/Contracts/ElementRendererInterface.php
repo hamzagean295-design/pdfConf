@@ -17,9 +17,9 @@ interface ElementRendererInterface
     /**
      * Renders a specific element onto the PDF page.
      *
-     * @param Fpdi $pdf The FPDI instance used to manipulate the PDF.
-     * @param array<string, mixed> $element The configuration for the element to render.
-     * @param object|null $data The data object containing dynamic values (e.g., an Eloquent model).
+     * @param  Fpdi  $pdf  The FPDI instance used to manipulate the PDF.
+     * @param  array<string, mixed>  $element  The configuration for the element to render.
+     * @param  object|null  $data  The data object containing dynamic values (e.g., an Eloquent model).
      */
     public function render(Fpdi $pdf, array $element, ?object $data): void;
 }

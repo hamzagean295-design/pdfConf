@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\PdfGenerator\Renderers;
 
 use App\Services\PdfGenerator\Contracts\ElementRendererInterface;
-use setasign\Fpdi\Fpdi;
 use Illuminate\Support\Facades\File;
+use setasign\Fpdi\Fpdi;
 
 final readonly class ImageRenderer implements ElementRendererInterface
 {
@@ -14,7 +14,7 @@ final readonly class ImageRenderer implements ElementRendererInterface
     {
         $imagePath = public_path($element['value']);
 
-        if (!File::exists($imagePath)) {
+        if (! File::exists($imagePath)) {
             // You could log an error here if needed
             return;
         }

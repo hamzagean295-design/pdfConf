@@ -15,10 +15,10 @@ use setasign\Fpdi\PdfParser\StreamReader;
 
 class DocumentController extends Controller
 {
-
     public function index()
     {
         $documents = Document::all();
+
         return view('documents.index', compact('documents'));
     }
 
@@ -27,10 +27,10 @@ class DocumentController extends Controller
         return view('documents.create');
     }
 
-
     public function show(Document $document)
     {
         $url = Storage::url($document->path);
+
         return redirect($url);
     }
 
@@ -45,9 +45,9 @@ class DocumentController extends Controller
             'path' => $path,
             'config' => [],
         ]);
+
         return to_route('documents.index');
     }
-
 
     public function edit(Document $document): View
     {
@@ -56,10 +56,10 @@ class DocumentController extends Controller
         $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
         if (Storage::exists($document->path)) {
             $fileContent = Storage::get($document->path);
-            $pdf = new Fpdi();
+            $pdf = new Fpdi;
             $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
         }
-        $dimensionsPage;
+
         $fonts = [
             'Arial',
             'Courier',
@@ -68,21 +68,21 @@ class DocumentController extends Controller
             'Times',
             'ZapfDingbats',
         ];
+
         return view('documents.edit', [
             'document' => $document,
             'pdfUrl' => Storage::url($document->path),
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
-            'fonts' => $fonts
+            'fonts' => $fonts,
         ]);
     }
-
 
     public function download(Document $document, PdfGeneratorService $pdfGenerator): Response
     {
 
         // 1. Lire le contenu du fichier PDF et extraire la configuration des éléments
-        if (!Storage::exists($document->path)) {
+        if (! Storage::exists($document->path)) {
             throw new FileNotFoundException("Source PDF not found at path: {$document->path}");
         }
         $data = [];
@@ -101,7 +101,7 @@ class DocumentController extends Controller
         // 3. Définition des headers pour une prévisualisation dans le navigateur
         $headers = [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $document->name . '.pdf"',
+            'Content-Disposition' => 'inline; filename="'.$document->name.'.pdf"',
         ];
 
         // 4. Retour d'une réponse Laravel avec le contenu et les headers
@@ -123,6 +123,7 @@ class DocumentController extends Controller
                 $element['x'] = $element['x'] ?? 0;
                 $element['y'] = $element['y'] ?? 0;
             }
+
             return $element;
         })->toArray();
 
@@ -143,4 +144,3 @@ class DocumentController extends Controller
         return back();
     }
 }
-

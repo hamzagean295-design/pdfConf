@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\CnssController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FactureController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return to_route('documents.index');
