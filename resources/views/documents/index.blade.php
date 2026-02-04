@@ -1,41 +1,59 @@
 @extends('layouts.app')
 
 @section('content')
-    <div  class="max-w-5xl mx-auto py-12">
-        <div class="flex items-center justify-between mb-4">
-            <h1 class="text-2xl font-bold">Liste de modèles</h1>
-            <a class="text-blue-500 hover:underline" href="{{ route('documents.create') }}">Charger un nouveau modèle</a>
+    <div class="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
+            <h1 class="text-3xl font-extrabold text-gray-900">Liste de modèles</h1>
+            <div class="mt-3 sm:ml-4 sm:mt-0">
+                <a href="{{ route('documents.create') }}"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Charger un nouveau modèle
+                </a>
+            </div>
         </div>
-        <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
-            <table class="w-full text-sm text-left rtl:text-right text-body">
-                <thead class="bg-neutral-secondary-soft border-b border-default">
-                    <th scope="col" class="px-6 py-3 font-medium"> Nom</th>
-                    <th scope="col" class="px-6 py-3 font-medium"> Actions</th>
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mt-8">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nom
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
                 </thead>
-                <tbody>
+                <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($documents as $document)
-                    <tr class="odd:bg-neutral-primary even:bg-neutral-secondary-soft border-b border-default">
-                            <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ $document->name }}
-                            </th>
-                            <td class="px-6 py-4">
-                                <a class="font-medium text-blue-500 text-fg-brand hover:underline"  target="_blank" href="{{ route('documents.show', ['document' => $document]) }}">Voir</a>
                             </td>
-                            <td class="px-6 py-4">
-                                <a class="font-medium text-fg-brand hover:underline" href="{{ route('documents.edit', ['document' => $document]) }}">Configurer</a>
-                            </td>
-                            <td class="px-6 py-4">
-                                <form action="{{ route('documents.destroy', ['document' => $document]) }}" method="POST">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <a class="text-indigo-600 hover:text-indigo-900 mr-4" target="_blank"
+                                    href="{{ route('documents.show', ['document' => $document]) }}">Voir</a>
+                                <a class="text-blue-600 hover:text-blue-900 mr-4"
+                                    href="{{ route('documents.edit', ['document' => $document]) }}">Configurer</a>
+                                <form action="{{ route('documents.destroy', ['document' => $document]) }}" method="POST"
+                                    class="inline-block">
                                     @csrf
                                     @method('DELETE')
-                                    <button  onclick="return confirm('{{ __('Voulez-vous vraiment supprimer cet élément ?') }}')" type="submit" class="font-medium text-red-600 text-fg-brand hover:underline">supprimer</button>
+                                    <button
+                                        onclick="return confirm('{{ __('Voulez-vous vraiment supprimer cet élément ?') }}')"
+                                        type="submit" class="text-red-600 hover:text-red-900">Supprimer</button>
                                 </form>
                             </td>
                         </tr>
                     @empty
-                        <tr><td>aucun modèle</td></tr>
+                        <tr>
+                            <td colspan="2" class="px-6 py-4 text-center text-gray-500">Aucun modèle trouvé.</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
     </div>
 @endsection
