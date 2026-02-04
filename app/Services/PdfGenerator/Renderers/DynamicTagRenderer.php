@@ -42,6 +42,9 @@ final readonly class DynamicTagRenderer implements ElementRendererInterface
         // Retrieve the value from the data object, default to an empty string
         $value = data_get($data, $key, '');
 
+        if (empty($value)) {
+            $value = $element['value'];
+        }
         $pdf->SetXY($element['x'], $element['y']);
         $pdf->Write(0, iconv('UTF-8', 'windows-1252', (string) $value));
     }
