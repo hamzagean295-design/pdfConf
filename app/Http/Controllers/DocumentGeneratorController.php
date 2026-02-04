@@ -56,29 +56,9 @@ class DocumentGeneratorController extends Controller
         return to_route('documents.index');
     }
 
-    /**
-     * Shows the advanced (canvas) PDF editor interface.
-     */
     public function edit(Document $document): View
     {
 
-        $pageCount = 0;
-        $dimensionsPage = ['width' => 210, 'height' => 297]; // Valeurs par défaut (A4)
-        if (Storage::exists($document->path)) {
-            $fileContent = Storage::disk('s3')->get($document->path);
-            $pdf = new Fpdi();
-            $pageCount = $pdf->setSourceFile(StreamReader::createByString($fileContent));
-        }
-        return view('document.edit', [
-            'document' => $document,
-            'pdfUrl' => Storage::url($document->path),
-            'pageCount' => $pageCount,
-            'dimensionsPage' => $dimensionsPage
-        ]);
-    }
-
-    public function editSimple(Document $document): View
-    {
         $pageCount = 0;
         $dimensionsPage = ['width' => 210, 'height' => 297];
 
@@ -96,7 +76,7 @@ class DocumentGeneratorController extends Controller
 
         $fonts = ['Arial', 'Courier', 'Helvetica', 'Symbol', 'Times', 'ZapfDingbats'];
 
-        return view('edit-simple', [
+        return view('documents.edit', [
             'document' => $document,
             // CRUCIAL : URL signée pour que le navigateur puisse afficher le PDF
             'pdfUrl' => Storage::disk('s3')->temporaryUrl($document->path, now()->addHours(1)),
@@ -106,14 +86,7 @@ class DocumentGeneratorController extends Controller
         ]);
     }
 
-    /**
-     * Generates and serves a customized PDF document for preview.
-     *
-     * @param Document $document The Document model instance, resolved via Route Model Binding.
-     * @param PdfGeneratorService $pdfGenerator The service responsible for PDF creation.
-     * @return Response
-     * @throws FileNotFoundException
-     */
+
     public function download(Document $document, PdfGeneratorService $pdfGenerator): Response
     {
 
@@ -144,14 +117,6 @@ class DocumentGeneratorController extends Controller
         return response($pdfContent, 200, $headers);
     }
 
-    /**
-     * Updates the document's configuration.
-     *
-     * @param Request $request
-     * @param Document $document
-     * @return \Illuminate\Http\JsonResponse
-     * @throws ValidationException
-     */
     public function saveConfig(Request $request, Document $document)
     {
         // --- Pre-process input to normalize color format ---
@@ -233,12 +198,10 @@ class DocumentGeneratorController extends Controller
     public function destroy(Document $document)
     {
         try {
-            // Supprimer directement sans vérifier l'existence avant
             Storage::disk('s3')->delete($document->path);
             $document->delete();
             return back();
         } catch (\Exception $e) {
-            // Cela vous affichera l'erreur REELLE (ex: identifiants invalides)
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

@@ -1,4 +1,6 @@
-<x-app-layout>
+@extends('layouts.app')
+
+@section('content')
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">Détails de la CNSS #{{ $cnss->id }}</h1>
 
@@ -102,4 +104,4 @@
             </a>
         </div>
     </div>
-</x-app-layout>
+@endsection

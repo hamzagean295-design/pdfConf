@@ -1,4 +1,6 @@
-<x-app-layout>
+@extends('layouts.app')
+
+@section('content')
     <div  class="max-w-5xl mx-auto py-12">
         <h1 class="mb-4 text-2xl font-bold">Nouveau modèle</h1>
         <form action="{{ route('documents.store') }}" enctype="multipart/form-data" method="POST">
@@ -27,4 +29,4 @@
             <button type="submit" class="bg-black text-white rounded-sm p-2 mt-2">Sauvegarder</button>
         </form>
     </div>
-</x-app-layout>
+@endsection

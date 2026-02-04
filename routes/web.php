@@ -18,8 +18,6 @@ Route::prefix('documents')->controller(DocumentGeneratorController::class)->grou
     Route::get('/{document}/edit', 'edit')->name('documents.edit');
     Route::get('/{document}/show', 'show')->name('documents.show');
     Route::delete('/{document}', 'destroy')->name('documents.destroy');
-    Route::get('/{document}/proxy', 'proxy')->name('documents.proxy');
-    Route::get('/{document}/edit-simple', 'editSimple')->name('documents.edit-simple');
     Route::patch('/{document}/config', 'saveConfig');
 });
 
@@ -28,8 +26,3 @@ Route::get('factures/{facture}/download-pdf', [FactureController::class, 'downlo
 
 Route::resource('cnss', CnssController::class);
 Route::get('cnss/{cnss}/download-pdf', [CnssController::class, 'downloadPdf'])->name('cnss.downloadPdf');
-
-
-Route::get('/edit-simple', function () {
-    return view('edit-simple');
-});

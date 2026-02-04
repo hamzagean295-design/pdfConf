@@ -1,5 +1,6 @@
-<x-app-layout>
-    @push('scripts')
+@extends('layouts.app')
+
+@push('scripts')
         <script type="module">
         // If absolute URL from the remote server is provided, configure the CORS
         // header on that server.
@@ -316,6 +317,7 @@
         </script>
     @endpush
 
+@section('content')
     <div class="w-full overflow-y-scroll">
         <div x-data="formEditor({
                 elements: {{ Illuminate\Support\Js::from($document->config['elements'] ?? []) }},
@@ -588,4 +590,4 @@
 </aside>
         </div>
     </div>
-</x-app-layout>
+@endsection
