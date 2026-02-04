@@ -30,6 +30,11 @@ class Facture extends Model
      */
     public function generatedPdfUrl(): ?string
     {
-        return $this->document_path ? Storage::temporaryUrl($this->document_path, now()->addMinutes(5)) : null;
+        if (config('filesystems.default') == 's3') {
+            $url = Storage::temporaryUrl($this->document_path, now()->addMinutes(5));
+        } else {
+            $url = Storage::url($this->document_path);
+        }
+        return $this->document_path ? $url : null;
     }
 }

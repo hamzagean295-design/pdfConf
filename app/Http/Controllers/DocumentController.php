@@ -29,7 +29,12 @@ class DocumentController extends Controller
 
     public function show(Document $document)
     {
-        $url = Storage::temporaryUrl($document->path, now()->addMinutes(5));
+        if (config('filesystems.default') == "s3") {
+            $url = Storage::temporaryUrl($document->path, now()->addMinutes(5));
+        } else {
+            $url = Storage::url($document->path);
+        }
+
 
         return redirect($url);
     }
@@ -69,9 +74,15 @@ class DocumentController extends Controller
             'ZapfDingbats',
         ];
 
+        // Log::info(config('filesystems.default'));
+        if (config('filesystems.default') == 's3') {
+            $url = Storage::temporaryUrl($document->path, now()->addHours(1));
+        } else {
+            $url = Storage::url($document->path);
+        }
         return view('documents.edit', [
             'document' => $document,
-            'pdfUrl' => Storage::temporaryUrl($document->path, now()->addHours(1)),
+            'pdfUrl' => $url,
             'totalPages' => $pageCount,
             'dimensionsPage' => $dimensionsPage,
             'fonts' => $fonts,

@@ -14,7 +14,7 @@
                         <label for="name" class="block text-sm font-medium text-gray-700">Nom</label>
                         <div class="mt-1">
                             <input type="text" id="name" name="name" placeholder="Ex: Facture"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                class="block w-full rounded-md border-gray-300 p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         </div>
                         @error('name')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -22,7 +22,8 @@
                     </div>
 
                     <div>
-                        <label for="file_input" class="block text-sm font-medium text-gray-700">Charger un fichier pdf</label>
+                        <label for="file_input" class="block text-sm font-medium text-gray-700">Charger un fichier
+                            pdf</label>
                         <div class="mt-1">
                             <input type="file" id="file_input" name="document"
                                 class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600">
@@ -44,3 +45,4 @@
         </div>
     </div>
 @endsection
+
