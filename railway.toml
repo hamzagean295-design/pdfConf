@@ -3,11 +3,3 @@ builder = "nixpacks"
 buildCommand = """
 npm run build
 """
-
-[deploy]
-preDeployCommand = """
-php artisan optimize:clear &&
-php artisan migrate --force &&
-php artisan storage:link
-"""
-
