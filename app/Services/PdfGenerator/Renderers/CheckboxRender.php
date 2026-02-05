@@ -55,15 +55,11 @@ final readonly class CheckboxRender implements ElementRendererInterface
                 } else {
                     $pdf->SetTextColor(0, 0, 0); // Default to black
                 }
-
-                // Position the cursor at the specific option's coordinates.
-                $pdf->SetXY((float) $option['x'], (float) $option['y']);
-
-                // Write the checkmark. 'X' is a common and simple mark.
-                $pdf->Write(0, 'X');
-
-                // This implementation assumes a radio-button-like behavior where only one option is selected.
-                // If multiple selections were possible from an array of data, we would remove this 'break'.
+                // 'X' as mark.
+                $x = (float) $option['x'];
+                $y = (float) $option['y'];
+                $pdf->SetXY($x, $y);
+                $pdf->Text($x, $y, 'X');
                 break;
             }
         }

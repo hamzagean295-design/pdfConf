@@ -6,7 +6,7 @@
         // header on that server.
         var url = '{!! $pdfUrl !!}';
         var pageCount = '{{ $totalPages }}';
-        pageCount = parseInt(pageCount);
+
         console.log(pageCount);
 
         var {
@@ -130,7 +130,7 @@
             }
 
             // 2. Convertir les points en millimètres
-            const xMm = (xPoints * MM_PER_POINT) - 2; // 3 => marge d'erreur
+            const xMm = (xPoints * MM_PER_POINT);
             const yMm = yPoints * MM_PER_POINT;
 
             return {
@@ -381,6 +381,7 @@
                     <button class="border px-4 py-2 rounded cursor-pointer bg-gray-100 hover:bg-gray-200 font-medium"
                         type="button" id="nextPage">Suivante →</button>
                 </div>
+                <p>dimensions: {{ $dimensionsPage['width'] . ' ' . $dimensionsPage['height'] }}</p>
             </main>
             <!-- Colonne de droite : Éditeur de propriétés -->
             <aside class="h-full flex-1 flex flex-col  bg-white">

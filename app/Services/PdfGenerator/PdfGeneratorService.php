@@ -9,6 +9,7 @@ use App\Services\PdfGenerator\Renderers\CheckboxRender;
 use App\Services\PdfGenerator\Renderers\DynamicTagRenderer;
 use App\Services\PdfGenerator\Renderers\ImageRenderer;
 use App\Services\PdfGenerator\Renderers\StaticTextRenderer;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\StreamReader;
@@ -51,9 +52,14 @@ final class PdfGeneratorService
         // Process all pages of the source document.
         for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
             $templateId = $pdf->importPage($pageNo);
-            $size = $pdf->getTemplateSize($templateId);
+            $size = $pdf->getImportedPageSize($templateId);
+            // Log::info($size['width'] . " " . $size['height']);
             $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            $pdf->useTemplate($templateId);
+            // $pdf->useImportedPage($templateId, 0, 0, $size['width']);
+            $pdf->useImportedPage($templateId);
+            $pdf->SetAutoPageBreak(false);
+            $pdf->SetMargins(0, 0, 0);
+            $pdf->SetAutoPageBreak(false); // Empêche les décalages en bas de page
 
             // Render elements on the current page.
             foreach ($elementsConfig as $element) {

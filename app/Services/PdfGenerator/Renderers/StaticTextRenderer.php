@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\PdfGenerator\Renderers;
 
 use App\Services\PdfGenerator\Contracts\ElementRendererInterface;
+use Illuminate\Support\Facades\Log;
 use setasign\Fpdi\Fpdi;
 
 final readonly class StaticTextRenderer implements ElementRendererInterface
@@ -36,7 +37,10 @@ final readonly class StaticTextRenderer implements ElementRendererInterface
             $pdf->SetTextColor(0, 0, 0);
         }
 
-        $pdf->SetXY($element['x'], $element['y']);
-        $pdf->Write(0, iconv('UTF-8', 'windows-1252', $element['value']));
+        $texte = $element['value'];
+        $x = $element['x'];
+        $y = $element['y'];
+        $pdf->SetXY($x, $y);
+        $pdf->Text($x, $y, $texte);
     }
 }

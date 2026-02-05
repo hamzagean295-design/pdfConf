@@ -45,7 +45,9 @@ final readonly class DynamicTagRenderer implements ElementRendererInterface
         if (empty($value)) {
             $value = $element['value'];
         }
-        $pdf->SetXY($element['x'], $element['y']);
-        $pdf->Write(0, iconv('UTF-8', 'windows-1252', (string) $value));
+        $x = $element['x'];
+        $y = $element['y'];
+        $pdf->SetXY($x, $y);
+        $pdf->Text($x, $y, $value);
     }
 }
