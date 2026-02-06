@@ -112,7 +112,7 @@ function convertToMm(xCanvas, yCanvas) {
 
     // 1. Convertir les coordonnées canvas en points PDF
     const xPoints = (xCanvas / VIEWPORT.width) * VIEWPORT_ORIGINAL.width;
-    
+
     // Pour Y: choisir le système de coordonnées
     let yPoints;
     if (Y_FROM_TOP) {
@@ -127,8 +127,8 @@ function convertToMm(xCanvas, yCanvas) {
 
     // 3. Ajustement pour le décalage en mode paysage
     if (PAGE_ORIENTATION === 'L') {
-        xMm -= 1; // Soustraire 1mm pour l'axe X
-        yMm += 1; // Ajouter 1mm pour l'axe Y
+        xMm -= 1.001; // Soustraire 1mm pour l'axe X
+        yMm += 1.02; // Ajouter 1mm pour l'axe Y
     }
 
     // 4. Déterminer les dimensions physiques réelles
@@ -158,9 +158,9 @@ function updateCords(e) {
     const xCanvasAdjusted = x * scaleX;
     const yCanvasAdjusted = y * scaleY;
     const cordos = convertToMm(xCanvasAdjusted, yCanvasAdjusted);
-    
+
     // Nettoyage des logs - suppression du console.log(xCanvasAdjusted, yCanvasAdjusted);
-    
+
     cordX.value = cordos.x;
     cordY.value = cordos.y;
 
