@@ -40,6 +40,7 @@ final readonly class StaticTextRenderer implements ElementRendererInterface
         $texte = $element['value'];
         $x = $element['x'];
         $y = $element['y'];
+
         $pdf->SetXY($x, $y);
         $pdf->Text($x, $y, $texte);
     }

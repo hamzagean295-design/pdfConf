@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\PdfGenerator\Renderers;
 
 use App\Services\PdfGenerator\Contracts\ElementRendererInterface;
+use Illuminate\Support\Facades\Log;
 use setasign\Fpdi\Fpdi;
 
 final readonly class DynamicTagRenderer implements ElementRendererInterface
@@ -47,6 +48,7 @@ final readonly class DynamicTagRenderer implements ElementRendererInterface
         }
         $x = $element['x'];
         $y = $element['y'];
+
         $pdf->SetXY($x, $y);
         $pdf->Text($x, $y, $value);
     }

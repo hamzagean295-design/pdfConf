@@ -53,13 +53,25 @@ final class PdfGeneratorService
         for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
             $templateId = $pdf->importPage($pageNo);
             $size = $pdf->getImportedPageSize($templateId);
-            // Log::info($size['width'] . " " . $size['height']);
             $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            // $pdf->useImportedPage($templateId, 0, 0, $size['width']);
             $pdf->useImportedPage($templateId);
             $pdf->SetAutoPageBreak(false);
             $pdf->SetMargins(0, 0, 0);
             $pdf->SetAutoPageBreak(false); // Empêche les décalages en bas de page
+
+            // Render elements on the current page.
+            foreach ($elementsConfig as $element) {
+                // Render element only if it belongs to the current page (default to page 1)
+                if ((int) ($element['page'] ?? 1) === $pageNo) {
+                    match ($element['type']) {
+                        'text' => $this->staticTextRenderer->render($pdf, $element, $dataObject),
+                        'tag' => $this->dynamicTagRenderer->render($pdf, $element, $dataObject),
+                        'image' => $this->imageRenderer->render($pdf, $element, $dataObject),
+                        'checkbox' => $this->checkboxRender->render($pdf, $element, $dataObject),
+                        default => throw new InvalidArgumentException("Unknown element type: '{$element['type']}'"),
+                    };
+                }
+            }
 
             // Render elements on the current page.
             foreach ($elementsConfig as $element) {

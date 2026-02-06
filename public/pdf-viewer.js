@@ -1,5 +1,3 @@
-// If absolute URL from the remote server is provided, configure the CORS
-// header on that server.
 const pdfViewerData = document.getElementById('pdf-viewer-data');
 var url = pdfViewerData.dataset.pdfUrl;
 var pageCount = pdfViewerData.dataset.totalPages;
@@ -28,6 +26,7 @@ let VIEWPORT;
 let VIEWPORT_ORIGINAL;
 let PDF_DOCUMENT;
 let currentPdfPage;
+let PAGE_ORIENTATION;
 var loadingTask = pdfjsLib.getDocument(url);
 var pageNumber = 1;
 
@@ -52,6 +51,9 @@ function init() {
                 scale: GLOBAL_SCALE
             });
             VIEWPORT = viewport;
+
+            // Détection de l'orientation de la page
+            PAGE_ORIENTATION = viewport.width > viewport.height ? 'L' : 'P';
 
             var context = canvas.getContext('2d');
             canvas.height = viewport.height;
@@ -109,25 +111,36 @@ function convertToMm(xCanvas, yCanvas) {
     const MM_PER_POINT = 25.4 / 72;
 
     // 1. Convertir les coordonnées canvas en points PDF
-    const xPoints = xCanvas / GLOBAL_SCALE;
-
+    const xPoints = (xCanvas / VIEWPORT.width) * VIEWPORT_ORIGINAL.width;
+    
     // Pour Y: choisir le système de coordonnées
     let yPoints;
     if (Y_FROM_TOP) {
-        // Y depuis le haut de la page (0 = haut)
-        yPoints = yCanvas / GLOBAL_SCALE;
+        yPoints = (yCanvas / VIEWPORT.height) * VIEWPORT_ORIGINAL.height;
     } else {
-        // Y depuis le bas de la page (0 = bas) - Standard PDF
-        yPoints = VIEWPORT_ORIGINAL.height - (yCanvas / GLOBAL_SCALE);
+        yPoints = VIEWPORT_ORIGINAL.height - ((yCanvas / VIEWPORT.height) * VIEWPORT_ORIGINAL.height);
     }
 
     // 2. Convertir les points en millimètres
-    const xMm = (xPoints * MM_PER_POINT);
-    const yMm = yPoints * MM_PER_POINT;
+    let xMm = xPoints * MM_PER_POINT;
+    let yMm = yPoints * MM_PER_POINT;
+
+    // 3. Ajustement pour le décalage en mode paysage
+    if (PAGE_ORIENTATION === 'L') {
+        xMm -= 1; // Soustraire 1mm pour l'axe X
+        yMm += 1; // Ajouter 1mm pour l'axe Y
+    }
+
+    // 4. Déterminer les dimensions physiques réelles
+    const actualPageWidth = VIEWPORT_ORIGINAL.width * MM_PER_POINT;
+    const actualPageHeight = VIEWPORT_ORIGINAL.height * MM_PER_POINT;
 
     return {
         x: +xMm.toFixed(2),
         y: +yMm.toFixed(2),
+        orientation: PAGE_ORIENTATION,
+        pageWidth: +actualPageWidth.toFixed(2),
+        pageHeight: +actualPageHeight.toFixed(2)
     };
 }
 
@@ -144,8 +157,10 @@ function updateCords(e) {
     const scaleY = canvas.height / rect.height;
     const xCanvasAdjusted = x * scaleX;
     const yCanvasAdjusted = y * scaleY;
-    console.log(xCanvasAdjusted, yCanvasAdjusted);
     const cordos = convertToMm(xCanvasAdjusted, yCanvasAdjusted);
+    
+    // Nettoyage des logs - suppression du console.log(xCanvasAdjusted, yCanvasAdjusted);
+    
     cordX.value = cordos.x;
     cordY.value = cordos.y;
 
